@@ -4,24 +4,18 @@ param rgHubName string
 param resourceSuffix string
 param rgName string
 param keyVaultPrivateEndpointName string
-param acrPrivateEndpointName string
-param functionAppPrivateEndpointName string
 param saPrivateEndpointName string
 param vnetName string
 param subnetName string
 param APIMsubnetName string
-param VNetIntegrationSubnetName string
 param APIMNamePrefix string
 param APIMName string = '${APIMNamePrefix}-${uniqueString('acrvws', utcNow('u'))}'
 param privateDNSZoneSAfileName string
 param privateDNSZoneSAtableName string
 param privateDNSZoneSAqueueName string
-param privateDNSZoneACRName string
 param privateDNSZoneKVName string
 param privateDNSZoneSAName string
-param privateDNSZoneFunctionAppName string
 param privateDNSZoneFHIRName string
-param acrName string = 'eslzacr${uniqueString('acrvws', utcNow('u'))}'
 param keyvaultName string = 'eslz-kv-${uniqueString('acrvws', utcNow('u'))}'
 param storageAccountName string = 'eslzsa${uniqueString('ahds', utcNow('u'))}'
 param storageAccountType string
@@ -31,9 +25,6 @@ param appGatewaySubnetName string
 param availabilityZones array
 param appGwyAutoScale object
 param appGatewayFQDN string
-@allowed([ 'managedIdentity', 'servicePrincipal' ])
-@description('Type of FHIR instance to integrate the loader with.')
-param authenticationType string = 'managedIdentity'
 @description('Set to selfsigned if self signed certificates should be used for the Application Gateway. Set to custom and copy the pfx file to vnet/certs/appgw.pfx if custom certificates are to be used')
 param appGatewayCertType string
 @secure()
@@ -46,10 +37,8 @@ param containerNames array = [
   'export-trigger'
 ]
 
-param hostingPlanName string
 param fhirName string
 param workspaceName string = 'eslzwks${uniqueString('workspacevws', utcNow('u'))}'
-param functionAppName string
 param ApiUrlPath string
 
 var primaryBackendEndFQDN = '${APIMName}.azure-api.net'
@@ -81,56 +70,6 @@ resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
 resource servicesSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
   scope: resourceGroup(rg.name)
   name: '${vnetName}/${subnetName}'
-}
-
-// Defining Integration Subnet
-resource VNetIntegrationSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: '${vnetName}/${VNetIntegrationSubnetName}'
-}
-
-// Creating Container Registry
-module acr 'modules/acr/acr.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: acrName
-  params: {
-    location: location
-    acrName: acrName
-    acrSkuName: 'Premium'
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
-  }
-}
-
-// Creating Private Endpoint for ACR
-module privateEndpointAcr 'modules/vnet/privateendpoint.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: acrPrivateEndpointName
-  params: {
-    location: location
-    groupIds: [
-      'registry'
-    ]
-    privateEndpointName: acrPrivateEndpointName
-    privatelinkConnName: '${acrPrivateEndpointName}-conn'
-    resourceId: acr.outputs.acrid
-    subnetid: servicesSubnet.id
-  }
-}
-
-// Defining Private DNS Zone for ACR
-resource privateDNSZoneACR 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: privateDNSZoneACRName
-}
-
-// Creating Private DNS Zone settings for ACR Private Endpoint
-module privateEndpointACRDNSSetting 'modules/vnet/privatedns.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'acr-pvtep-dns'
-  params: {
-    privateDNSZoneId: privateDNSZoneACR.id
-    privateEndpointName: privateEndpointAcr.name
-  }
 }
 
 // Creating Key Vault
@@ -509,18 +448,6 @@ module privateEndpointFHIRDNSSetting 'modules/vnet/privatedns.bicep' = {
   }
 }
 
-// Hosting plan App Service
-// Creating App Service Plan
-module hostingPlan 'modules/function/hostingplan.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: hostingPlanName
-  params: {
-    hostingPlanName: hostingPlanName
-    location: location
-    functionWorkers: 5
-  }
-}
-
 // Creating Storage Container
 module container 'modules/storage/container.bicep' = [for name in containerNames: {
   scope: resourceGroup(rg.name)
@@ -655,81 +582,6 @@ module apimImportAPI 'modules/apim/api-deploymentScript.bicep' = {
   ]
 }
 
-// FunctionApp
-// Creating Function App
-module functionApp 'modules/function/functionapp.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'functionApp'
-  params: {
-    functionAppName: functionAppName
-    location: location
-    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
-    storageAccountName: storage.outputs.storageAccountName
-    VNetIntegrationSubnetID: VNetIntegrationSubnet.id
-    functionContentShareName: functionContentShareName
-    hostingPlanName: hostingPlan.outputs.serverfarmname
-    kvname: keyvault.outputs.keyvaultName
-    fnIdentityId: fnIdentity.outputs.identityid
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
-    authenticationType: authenticationType
-  }
-  dependsOn: [
-    kvaccess
-    fnvaultRole
-    functioncontentfileshare
-    fsurlkvsecret
-    tenantkvsecret
-    fsreskvsecret
-    sakvsecret
-  ]
-}
-
-// Creating role for Function App identity on FHIR
-module fhirrole 'modules/Identity/fhirrole.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'fhirrole'
-  params: {
-    principalId: functionApp.outputs.fnappidentity
-    roleGuid: '5a1fc7df-4bf1-4951-a576-89034ee01acd'
-    fhirName: fhir.name
-    workspaceName: workspaceName
-  }
-}
-
-// Creating Function App Private Endpoint
-module privateEndpointFunctionApp 'modules/vnet/privateendpoint.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: functionAppPrivateEndpointName
-  params: {
-    location: location
-    groupIds: [
-      'sites'
-    ]
-    privateEndpointName: functionAppPrivateEndpointName
-    privatelinkConnName: '${functionAppPrivateEndpointName}-conn'
-    resourceId: functionApp.outputs.fnappid
-    subnetid: servicesSubnet.id
-  }
-}
-
-// Defining Private DNS Zone for Function App
-resource privateDNSZoneFunctionApp 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: privateDNSZoneFunctionAppName
-}
-
-// Creating Function App Private endpoint DNS Settings
-module privateEndpointFunctionAppDNSSetting 'modules/vnet/privatedns.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'functionApp-pvtep-dns'
-  params: {
-    privateDNSZoneId: privateDNSZoneFunctionApp.id
-    privateEndpointName: privateEndpointFunctionApp.name
-  }
-}
-
-
-
 module bundleeventsub 'modules/storage/eventsub.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'bundlequeuesub'
@@ -778,7 +630,6 @@ module storageNetworkUpdate 'modules/storage/sanetwork-deploymentScript.bicep' =
 
 
 // Outputs
-output acrName string = acr.name
 output keyvaultName string = keyvault.name
 output storageName string = storage.name
 output publicipappgw string = publicipappgw.outputs.IpAddress

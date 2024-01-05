@@ -22,7 +22,7 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
       {
         enabled: true
         retentionPolicy: {
-          days: 30
+          days: 0
           enabled: true
         }
       }

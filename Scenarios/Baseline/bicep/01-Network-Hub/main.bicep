@@ -107,42 +107,6 @@ module azfirewall 'modules/vnet/firewall.bicep' = {
   }
 }
 
-// Create Public IP for Bastion
-module publicipbastion 'modules/VM/publicip.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'publicipbastion'
-  params: {
-    location: location
-    publicipName: 'bastion-pip'
-    publicipproperties: {
-      publicIPAllocationMethod: 'Static'
-    }
-    publicipsku: {
-      name: 'Standard'
-      tier: 'Regional'
-    }
-    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
-  }
-}
-
-// Defining Bastion Subnet
-resource subnetbastion 'Microsoft.Network/virtualNetworks/subnets@2020-11-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: '${vnethub.name}/AzureBastionSubnet'
-}
-
-// Creating Bastion
-module bastion 'modules/VM/bastion.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'bastion'
-  params: {
-    location: location
-    bastionpipId: publicipbastion.outputs.publicipId
-    subnetId: subnetbastion.id
-    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
-  }
-}
-
 // Creating VM Subnet Route Table
 module routetable 'modules/vnet/routetable.bicep' = {
   scope: resourceGroup(rg.name)

@@ -140,25 +140,6 @@ module vnetpeeringspoke 'modules/vnet/vnetpeering.bicep' = {
   ]
 }
 
-// Creating Private DNS Zone for ACR
-module privatednsACRZone 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privatednsACRZone'
-  params: {
-    privateDNSZoneName: 'privatelink${environment().suffixes.acrLoginServer}'
-  }
-}
-
-// Linking Private DNS Zone for ACR to Hub VNet
-module privateDNSLinkACR 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privateDNSLinkACR'
-  params: {
-    privateDnsZoneName: privatednsACRZone.outputs.privateDNSZoneName
-    vnetId: vnethub.id
-  }
-}
-
 // Creating Private DNS Zone for Key Vault
 module privatednsVaultZone 'modules/vnet/privatednszone.bicep' = {
   scope: resourceGroup(rg.name)
@@ -264,25 +245,6 @@ module privateDNSLinkSAqueue 'modules/vnet/privatednslink.bicep' = {
   name: 'privateDNSLinkSAqueue'
   params: {
     privateDnsZoneName: privatednsSAqueueZone.outputs.privateDNSZoneName
-    vnetId: vnethub.id
-  }
-}
-
-// Creating Private DNS Zone for App Service
-module privatednsAppSVCZone 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privatednsAppSVCZone'
-  params: {
-    privateDNSZoneName: 'privatelink.azurewebsites.net'
-  }
-}
-
-// Linking Private DNS Zone for App Service to Hub VNet
-module privateDNSLinkAppSVC 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privateDNSLinkAppSVC'
-  params: {
-    privateDnsZoneName: privatednsAppSVCZone.outputs.privateDNSZoneName
     vnetId: vnethub.id
   }
 }

@@ -5,6 +5,9 @@
     "rgName": {
       "value": "ESLZ-AHDS-SPOKE"
     },
+    "rgHubName": {
+      "value": "ESLZ-AHDS-HUB"
+    },
     "vnetSpokeName": {
       "value": "VNet-SPOKE"
     },

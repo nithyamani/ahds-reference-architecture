@@ -11,23 +11,14 @@
     "keyVaultPrivateEndpointName": {
       "value": "keyvault-pvt-ep"
     },
-    "acrPrivateEndpointName": {
-      "value": "acr-pvt-ep"
-    },
     "saPrivateEndpointName": {
       "value": "sa-pvt-ep"
-    },
-    "functionAppPrivateEndpointName": {
-      "value": "functionApp-pvt-ep"
     },
     "vnetName": {
       "value": "VNet-SPOKE"
     },
     "subnetName": {
       "value": "servicespe"
-    },
-    "VNetIntegrationSubnetName": {
-      "value": "VNetIntegration"
     },
     "APIMsubnetName": {
       "value": "APIM"
@@ -44,17 +35,11 @@
     "privateDNSZoneSAqueueName": {
       "value": "privatelink.queue.core.windows.net"
     },
-    "privateDNSZoneACRName": {
-      "value": "privatelink.azurecr.io"
-    },
     "privateDNSZoneKVName": {
       "value": "privatelink.vaultcore.azure.net"
     },
     "privateDNSZoneSAName": {
       "value": "privatelink.blob.core.windows.net"
-    },
-    "privateDNSZoneFunctionAppName": {
-      "value": "privatelink.azurewebsites.net"
     },
     "storageAccountType": {
       "value": "Standard_GZRS"
@@ -75,7 +60,7 @@
       "value": "AppGWSubnet"
     },
     "appGatewayFQDN": {
-      "value": "api.example.com"
+      "value": "tjc.fhir.com"
     },
     "appGatewayCertType": {
       "value": "selfsigned"
@@ -83,26 +68,17 @@
     "certPassword": {
       "value": "ENTER-PASSWORD"
     },
-    "hostingPlanName": {
-      "value": "HostingPlan-AHDS"
-    },
     "fhirName": {
       "value": "fhir-ahds"
     },
     "privateDNSZoneFHIRName": {
       "value": "privatelink.azurehealthcareapis.com"
     },
-    "functionAppName": {
-      "value": "FunctionApp-AHDS"
-    },
     "ApiUrlPath": {
       "value": "https://raw.githubusercontent.com/Azure/ahds-reference-architecture/main/Scenarios/Baseline/bicep/03-AHDS/swagger/ahds-fhir-swagger.json"
     },
     "resourceSuffix": {
       "value": "AHDS"
-    },
-    "authenticationType": {
-      "value": "managedIdentity"
     }
   }
 }

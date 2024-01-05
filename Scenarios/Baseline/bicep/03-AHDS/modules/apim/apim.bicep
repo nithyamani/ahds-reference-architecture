@@ -31,7 +31,7 @@ param appInsightsInstrumentationKey string
 @description('Optional. Specifies the number of days that logs will be kept for; a value of 0 will retain data indefinitely.')
 @minValue(0)
 @maxValue(365)
-param diagnosticLogsRetentionInDays int = 365
+param diagnosticLogsRetentionInDays int = 0
 
 @description('Optional. Resource identifier of log analytics.')
 param diagnosticWorkspaceId string
@@ -88,7 +88,7 @@ var diagnosticsMetrics = [for metric in diagnosticMetricsToEnable: {
 }]
 
 // Creating APIM Service
-resource apimName_resource 'Microsoft.ApiManagement/service@2020-12-01' = {
+resource apimName_resource 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
   name: apimName
   location: location
   sku: {
