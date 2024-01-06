@@ -533,36 +533,6 @@ module sakvsecret 'modules/keyvault/kvsecrets.bicep' = {
   }
 }
 
-// Creating user assigned for fhirloaderid
-module fnIdentity 'modules/Identity/userassigned.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'fnIdentity'
-  params: {
-    location: location
-    identityName: 'fhirloaderid'
-  }
-}
-
-// Giving access to KeyVault Access for fhirloaderid
-module kvaccess 'modules/keyvault/keyvaultaccess.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'kvaultAccess'
-  params: {
-    keyvaultManagedIdentityObjectId: fnIdentity.outputs.principalId
-    vaultName: keyvault.outputs.keyvaultName
-  }
-}
-
-// Giving access to KeyVault Access for fhirloaderid
-module fnvaultRole 'modules/Identity/kvaccess.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'fnvaultRole'
-  params: {
-    principalId: fnIdentity.outputs.principalId
-    vaultName: keyvault.outputs.keyvaultName
-  }
-}
-
 // Importing FHIR at APIM (This is using deployment script, it will load the Swagger API definition from GitHub)
 module apimImportAPI 'modules/apim/api-deploymentScript.bicep' = {
   name: 'apimImportAPI'

@@ -6,7 +6,6 @@ param vnetHubName string
 param hubVNETaddPrefixes array
 param hubSubnets array
 param azfwName string
-param rtVMSubnetName string
 param fwapplicationRuleCollections array
 param fwnetworkRuleCollections array
 param fwnatRuleCollections array
@@ -104,30 +103,5 @@ module azfirewall 'modules/vnet/firewall.bicep' = {
     fwnatRuleCollections: fwnatRuleCollections
     fwnetworkRuleCollections: fwnetworkRuleCollections
     diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
-  }
-}
-
-// Creating VM Subnet Route Table
-module routetable 'modules/vnet/routetable.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: rtVMSubnetName
-  params: {
-    location: location
-    rtName: rtVMSubnetName
-  }
-}
-
-// Creating Route Table Routes
-module routetableroutes 'modules/vnet/routetableroutes.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'vm-to-internet'
-  params: {
-    routetableName: routetable.name
-    routeName: 'vm-to-internet'
-    properties: {
-      nextHopType: 'VirtualAppliance'
-      nextHopIpAddress: azfirewall.outputs.fwPrivateIP
-      addressPrefix: '0.0.0.0/0'
-    }
   }
 }

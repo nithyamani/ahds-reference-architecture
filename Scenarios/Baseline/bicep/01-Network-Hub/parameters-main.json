@@ -33,20 +33,11 @@
           "properties": {
             "addressPrefix": "10.0.1.0/26"
           }
-        },
-        {
-          "name": "vmsubnet",
-          "properties": {
-            "addressPrefix": "10.0.3.0/24"
-          }
         }
       ]
     },
     "azfwName": {
       "value": "AZFW"
-    },
-    "rtVMSubnetName":{
-      "value": "vm-subnet-rt"
     },
     "fwapplicationRuleCollections": {
       "value": [
