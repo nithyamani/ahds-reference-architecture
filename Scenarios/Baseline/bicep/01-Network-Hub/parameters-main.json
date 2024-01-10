@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "rgHubName": {
-      "value": "ESLZ-AHDS-HUB"
+      "value": "ESLZ-AHDS-SPOKE"
     },
     "availabilityZones": {
       "value": [
@@ -13,11 +13,12 @@
       ]
     },
     "vnetHubName": {
-      "value": "VNet-HUB"
+      "value": "VNet-SPOKE"
     },
     "hubVNETaddPrefixes": {
       "value": [
-        "10.0.0.0/16"
+        "10.0.0.0/16",
+        "10.1.0.0/16"
       ]
     },
     "hubSubnets": {
@@ -32,6 +33,36 @@
           "name": "AzureFirewallSubnet",
           "properties": {
             "addressPrefix": "10.0.1.0/26"
+          }
+        },
+        {
+          "name": "FHIR",
+          "properties": {
+            "addressPrefix": "10.1.1.0/24"
+          }
+        },
+        {
+          "name": "AppGWSubnet",
+          "properties": {
+            "addressPrefix": "10.1.2.0/27",
+            "serviceEndpoints": [
+              {
+                "service": "Microsoft.Storage"
+              }
+            ]
+          }
+        },
+        {
+          "name": "servicespe",
+          "properties": {
+            "addressPrefix": "10.1.4.0/24",
+            "privateEndpointNetworkPolicies": "Disabled"
+          }
+        },
+        {
+          "name": "APIM",
+          "properties": {
+            "addressPrefix": "10.1.5.0/24"
           }
         }
       ]
@@ -219,6 +250,13 @@
     },
     "fwnatRuleCollections": {
       "value": []
+    },
+    "dhcpOptions": {
+      "value": {
+        "dnsServers": [
+          "10.0.1.4"
+        ]
+      }
     },
     "resourceSuffix":{
       "value": "AHDS"

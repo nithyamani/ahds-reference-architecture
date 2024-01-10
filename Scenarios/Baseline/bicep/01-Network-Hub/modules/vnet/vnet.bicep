@@ -7,6 +7,8 @@ param vnetAddressSpace object = {
 param vnetName string
 param subnets array
 param location string = resourceGroup().location
+param dhcpOptions object
+
 @description('Optional. Specifies the number of days that logs will be kept for; a value of 0 will retain data indefinitely.')
 @minValue(0)
 @maxValue(365)
@@ -74,6 +76,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-02-01' = {
   properties: {
     addressSpace: vnetAddressSpace
     subnets: subnets
+    dhcpOptions: dhcpOptions
   }
 }
 

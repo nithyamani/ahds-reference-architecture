@@ -4,8 +4,6 @@ targetScope = 'subscription'
 param rgHubName string
 param rgName string
 param vnetSpokeName string
-param spokeVNETaddPrefixes array
-param spokeSubnets array
 param rtFHIRSubnetName string
 param firewallIP string
 param vnetHubName string
@@ -13,7 +11,6 @@ param vnetHUBRGName string
 param nsgFHIRName string
 param nsgAppGWName string
 param rtAppGWSubnetName string
-param dhcpOptions object
 param location string = deployment().location
 param resourceSuffix string
 param appGatewaySubnetName string
@@ -26,32 +23,37 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06
 }
 
 // Creating SPOKE resource Group
-module rg 'modules/resource-group/rg.bicep' = {
+// module rg 'modules/resource-group/rg.bicep' = {
+//   name: rgName
+//   params: {
+//     rgName: rgName
+//     location: location
+//   }
+// }
+
+// Defining Resource Groupt
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
   name: rgName
-  params: {
-    rgName: rgName
-    location: location
-  }
 }
 
 // Creating Spoke Virtual Network
-module vnetspoke 'modules/vnet/vnet.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: vnetSpokeName
-  params: {
-    location: location
-    vnetAddressSpace: {
-      addressPrefixes: spokeVNETaddPrefixes
-    }
-    vnetName: vnetSpokeName
-    subnets: spokeSubnets
-    dhcpOptions: dhcpOptions
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
-  }
-  dependsOn: [
-    rg
-  ]
-}
+// module vnetspoke 'modules/vnet/vnet.bicep' = {
+//   scope: resourceGroup(rg.name)
+//   name: vnetSpokeName
+//   params: {
+//     location: location
+//     vnetAddressSpace: {
+//       addressPrefixes: spokeVNETaddPrefixes
+//     }
+//     vnetName: vnetSpokeName
+//     subnets: spokeSubnets
+//     dhcpOptions: dhcpOptions
+//     diagnosticWorkspaceId: logAnalyticsWorkspace.id
+//   }
+//   dependsOn: [
+//     rg
+//   ]
+// }
 
 // Creating NSG for FHIR Subnet
 module nsgfhirsubnet 'modules/vnet/nsg.bicep' = {
@@ -93,52 +95,50 @@ module routetableroutes 'modules/vnet/routetableroutes.bicep' = {
 }
 
 // Defining HUB Virtual Network
-resource vnethub 'Microsoft.Network/virtualNetworks@2021-02-01' existing = {
+resource vnetspoke 'Microsoft.Network/virtualNetworks@2021-02-01' existing = {
   scope: resourceGroup(vnetHUBRGName)
   name: vnetHubName
 }
 
 // Creating VNet Peering Hub to Spoke
-module vnetpeeringhub 'modules/vnet/vnetpeering.bicep' = {
-  scope: resourceGroup(vnetHUBRGName)
-  name: 'vnetpeeringhub'
-  params: {
-    peeringName: 'HUB-to-Spoke'
-    vnetName: vnethub.name
-    properties: {
-      allowVirtualNetworkAccess: true
-      allowForwardedTraffic: true
-      remoteVirtualNetwork: {
-        id: vnetspoke.outputs.vnetId
-      }
-    }
-  }
-  dependsOn: [
-    vnethub
-    vnetspoke
-  ]
-}
+// module vnetpeeringhub 'modules/vnet/vnetpeering.bicep' = {
+//   scope: resourceGroup(vnetHUBRGName)
+//   name: 'vnetpeeringhub'
+//   params: {
+//     peeringName: 'HUB-to-Spoke'
+//     vnetName: vnetspoke.name
+//     properties: {
+//       allowVirtualNetworkAccess: true
+//       allowForwardedTraffic: true
+//       remoteVirtualNetwork: {
+//         id: vnetspoke.id
+//       }
+//     }
+//   }
+//   dependsOn: [
+//     vnetspoke
+//   ]
+// }
 
 // Creating VNet Peering Spoke to Hub
-module vnetpeeringspoke 'modules/vnet/vnetpeering.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'vnetpeeringspoke'
-  params: {
-    peeringName: 'Spoke-to-HUB'
-    vnetName: vnetspoke.outputs.vnetName
-    properties: {
-      allowVirtualNetworkAccess: true
-      allowForwardedTraffic: true
-      remoteVirtualNetwork: {
-        id: vnethub.id
-      }
-    }
-  }
-  dependsOn: [
-    vnethub
-    vnetspoke
-  ]
-}
+// module vnetpeeringspoke 'modules/vnet/vnetpeering.bicep' = {
+//   scope: resourceGroup(rg.name)
+//   name: 'vnetpeeringspoke'
+//   params: {
+//     peeringName: 'Spoke-to-HUB'
+//     vnetName: vnetspoke.name
+//     properties: {
+//       allowVirtualNetworkAccess: true
+//       allowForwardedTraffic: true
+//       remoteVirtualNetwork: {
+//         id: vnetspoke.id
+//       }
+//     }
+//   }
+//   dependsOn: [
+//     vnetspoke
+//   ]
+// }
 
 // Creating Private DNS Zone for Key Vault
 module privatednsVaultZone 'modules/vnet/privatednszone.bicep' = {
@@ -150,14 +150,14 @@ module privatednsVaultZone 'modules/vnet/privatednszone.bicep' = {
 }
 
 // Linking Private DNS Zone for Key Vault to Hub VNet
-module privateDNSLinkVault 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privateDNSLinkVault'
-  params: {
-    privateDnsZoneName: privatednsVaultZone.outputs.privateDNSZoneName
-    vnetId: vnethub.id
-  }
-}
+// module privateDNSLinkVault 'modules/vnet/privatednslink.bicep' = {
+//   scope: resourceGroup(rg.name)
+//   name: 'privateDNSLinkVault'
+//   params: {
+//     privateDnsZoneName: privatednsVaultZone.outputs.privateDNSZoneName
+//     vnetId: vnetspoke.id
+//   }
+// }
 
 // Linking Private DNS Zone for Key Vault to Spoke VNet (required for AppGW to work properly to load Cert from a Private Endpoing Key Vault)
 module privateDNSLinkVaultSpoke 'modules/vnet/privatednslink.bicep' = {
@@ -165,12 +165,12 @@ module privateDNSLinkVaultSpoke 'modules/vnet/privatednslink.bicep' = {
   name: 'privateDNSLinkVaultSpoke'
   params: {
     privateDnsZoneName: privatednsVaultZone.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
+    vnetId: vnetspoke.id
     linkName: 'link-spoke'
   }
-  dependsOn: [
-    privateDNSLinkVault
-  ]
+  // dependsOn: [
+  //   privateDNSLinkVault
+  // ]
 }
 
 // Creating Private DNS Zone for Storage Account Blob
@@ -188,7 +188,7 @@ module privateDNSLinkSA 'modules/vnet/privatednslink.bicep' = {
   name: 'privateDNSLinkSA'
   params: {
     privateDnsZoneName: privatednsSAZone.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -207,7 +207,7 @@ module privateDNSLinkSAfile 'modules/vnet/privatednslink.bicep' = {
   name: 'privateDNSLinkSAfile'
   params: {
     privateDnsZoneName: privatednsSAfileZone.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -226,7 +226,7 @@ module privateDNSLinkSAtable 'modules/vnet/privatednslink.bicep' = {
   name: 'privateDNSLinkSAtable'
   params: {
     privateDnsZoneName: privatednsSAtableZone.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -245,7 +245,7 @@ module privateDNSLinkSAqueue 'modules/vnet/privatednslink.bicep' = {
   name: 'privateDNSLinkSAqueue'
   params: {
     privateDnsZoneName: privatednsSAqueueZone.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -266,7 +266,7 @@ module privatednsazureapinetLink 'modules/vnet/privatednslink.bicep' = {
   name: 'privatednsazureapinetLink'
   params: {
     privateDnsZoneName: privatednsazureapinet.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -285,7 +285,7 @@ module privatednsportalazureapinetLink 'modules/vnet/privatednslink.bicep' = {
   name: 'privatednsportalazureapinetLink'
   params: {
     privateDnsZoneName: privatednsportalazureapinet.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -304,7 +304,7 @@ module privatednsdeveloperazureapinetLink 'modules/vnet/privatednslink.bicep' = 
   name: 'privatednsdeveloperazureapinetLink'
   params: {
     privateDnsZoneName: privatednsdeveloperazureapinet.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -323,7 +323,7 @@ module privatednsmanagementazureapinetLink 'modules/vnet/privatednslink.bicep' =
   name: 'privatednsmanagementazureapinetLink'
   params: {
     privateDnsZoneName: privatednsmanagementazureapinet.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -342,7 +342,7 @@ module privatednsscmazureapinetLink 'modules/vnet/privatednslink.bicep' = {
   name: 'privatednsscmazureapinetLink'
   params: {
     privateDnsZoneName: privatednsscmazureapinet.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 
@@ -362,7 +362,7 @@ module privatednsfhirLink 'modules/vnet/privatednslink.bicep' = {
   name: 'privatednsfhirLink'
   params: {
     privateDnsZoneName: privatednsfhir.outputs.privateDNSZoneName
-    vnetId: vnethub.id
+    vnetId: vnetspoke.id
   }
 }
 

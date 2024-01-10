@@ -12,6 +12,7 @@ param fwnatRuleCollections array
 param location string = deployment().location
 param availabilityZones array
 param resourceSuffix string
+param dhcpOptions object
 
 // Creating Hub Resource Group
 module rg 'modules/resource-group/rg.bicep' = {
@@ -46,6 +47,7 @@ module vnethub 'modules/vnet/vnet.bicep' = {
     }
     vnetName: vnetHubName
     subnets: hubSubnets
+    dhcpOptions: dhcpOptions
     diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
   }
   dependsOn: [

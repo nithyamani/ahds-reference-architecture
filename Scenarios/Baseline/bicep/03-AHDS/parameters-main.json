@@ -6,7 +6,7 @@
       "value": "ESLZ-AHDS-SPOKE"
     },
     "rgHubName": {
-      "value": "ESLZ-AHDS-HUB"
+      "value": "ESLZ-AHDS-SPOKE"
     },
     "keyVaultPrivateEndpointName": {
       "value": "keyvault-pvt-ep"
