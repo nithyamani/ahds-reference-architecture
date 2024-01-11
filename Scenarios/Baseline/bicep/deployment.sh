@@ -110,7 +110,7 @@ fi
 # 01-Network-Hub
 # *** The JumpBox VM User Name and Password will be auto generated and will be saved at the Key Vault under HUB Resource Group
 # You have to give yourself access in order to read the both Secrets with username and password
-az deployment sub create -n "ESLZ-HUB-AHDS" -l $answerAzRegion -f 01-Network-Hub/main.bicep -p 01-Network-Hub/parameters-main.json
+# az deployment sub create -n "ESLZ-HUB-AHDS" -l $answerAzRegion -f 01-Network-Hub/main.bicep -p 01-Network-Hub/parameters-main.json
 #az deployment sub create -n "ESLZ-AHDS-HUB-UDR" -l $answerAzRegion -f 01-Network-Hub/updateUDR.bicep -p 01-Network-Hub/parameters-updateUDR.json
 #az deployment sub create -n "ESLZ-HUB-VM" -l $answerAzRegion -f 01-Network-Hub/deploy-vm.bicep -p 01-Network-Hub/parameters-deploy-vm.json
 

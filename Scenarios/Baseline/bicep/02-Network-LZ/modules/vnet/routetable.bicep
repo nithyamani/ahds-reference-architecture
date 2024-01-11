@@ -3,7 +3,7 @@ param rtName string
 param location string = resourceGroup().location
 
 // Creating Route Table
-resource rt 'Microsoft.Network/routeTables@2020-11-01' = {
+resource rt 'Microsoft.Network/routeTables@2021-02-01' = {
   name: rtName
   location: location
 }
