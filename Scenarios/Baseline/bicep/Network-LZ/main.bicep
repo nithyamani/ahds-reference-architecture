@@ -23,7 +23,7 @@ param availabilityZones array
 param dhcpOptions object
 
 
-// Creating Hub Resource Group
+// Creating Resource Group
 module rg 'modules/resource-group/rg.bicep' = {
   name: rgName
   params: {
@@ -84,7 +84,7 @@ module routetableroutes 'modules/vnet/routetableroutes.bicep' = {
   ]
 }
 
-// Creating Hub VNET
+// Creating VNET
 module vnetspoke 'modules/vnet/vnet.bicep' = {
   scope: resourceGroup(rg.name)
   name: vnetSpokeName
@@ -106,11 +106,11 @@ module vnetspoke 'modules/vnet/vnet.bicep' = {
 // Creating Azure Firewall public IP
 module publicipfw 'modules/vnet/publicip.bicep' = {
   scope: resourceGroup(rg.name)
-  name: 'AZFW-PIP'
+  name: 'ent-dev-fhir-fw-pip'
   params: {
     availabilityZones: availabilityZones
     location: location
-    publicipName: 'AZFW-PIP'
+    publicipName: 'ent-dev-fhir-fw-pip'
     publicipproperties: {
       publicIPAllocationMethod: 'Static'
     }
@@ -138,7 +138,7 @@ module azfirewall 'modules/vnet/firewall.bicep' = {
     fwname: azfwName
     fwipConfigurations: [
       {
-        name: 'AZFW-PIP'
+        name: 'ent-dev-fhir-fw-pip'
         properties: {
           subnet: {
             id: subnetfw.id
@@ -185,7 +185,7 @@ module privatednsSAZone 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for Storage Account Blob to Hub VNet
+// Linking Private DNS Zone for Storage Account Blob to VNet
 module privateDNSLinkSA 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privateDNSLinkSA'
@@ -204,7 +204,7 @@ module privatednsSAfileZone 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for Storage Account File to Hub VNet
+// Linking Private DNS Zone for Storage Account File to VNet
 module privateDNSLinkSAfile 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privateDNSLinkSAfile'
@@ -223,7 +223,7 @@ module privatednsSAtableZone 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for Storage Account Table to Hub VNet
+// Linking Private DNS Zone for Storage Account Table to VNet
 module privateDNSLinkSAtable 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privateDNSLinkSAtable'
@@ -242,7 +242,7 @@ module privatednsSAqueueZone 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for Storage Account Queue to Hub VNet
+// Linking Private DNS Zone for Storage Account Queue to VNet
 module privateDNSLinkSAqueue 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privateDNSLinkSAqueue'
@@ -262,7 +262,7 @@ module privatednsazureapinet 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for APIM to Hub VNet
+// Linking Private DNS Zone for APIM to VNet
 module privatednsazureapinetLink 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privatednsazureapinetLink'
@@ -281,7 +281,7 @@ module privatednsportalazureapinet 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for APIM portal to Hub VNet
+// Linking Private DNS Zone for APIM portal to VNet
 module privatednsportalazureapinetLink 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privatednsportalazureapinetLink'
@@ -300,7 +300,7 @@ module privatednsdeveloperazureapinet 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for APIM developer to Hub VNet
+// Linking Private DNS Zone for APIM developer to VNet
 module privatednsdeveloperazureapinetLink 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privatednsdeveloperazureapinetLink'
@@ -319,7 +319,7 @@ module privatednsmanagementazureapinet 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for APIM management to Hub VNet
+// Linking Private DNS Zone for APIM management to VNet
 module privatednsmanagementazureapinetLink 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privatednsmanagementazureapinetLink'
@@ -338,7 +338,7 @@ module privatednsscmazureapinet 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for APIM scm to Hub VNet
+// Linking Private DNS Zone for APIM scm to VNet
 module privatednsscmazureapinetLink 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privatednsscmazureapinetLink'
@@ -358,7 +358,7 @@ module privatednsfhir 'modules/vnet/privatednszone.bicep' = {
   }
 }
 
-// Linking Private DNS Zone for FHIR to Hub VNet
+// Linking Private DNS Zone for FHIR to VNet
 module privatednsfhirLink 'modules/vnet/privatednslink.bicep' = {
   scope: resourceGroup(rg.name)
   name: 'privatednsfhirLink'

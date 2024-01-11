@@ -1,6 +1,5 @@
 targetScope = 'subscription'
 // Parameters
-param rgHubName string
 param resourceSuffix string
 param rgName string
 param keyVaultPrivateEndpointName string
@@ -9,6 +8,8 @@ param vnetName string
 param subnetName string
 param APIMsubnetName string
 param APIMNamePrefix string
+param KeyVaultNamePrefix string
+param StorageAccountNamePrefix string
 param APIMName string = '${APIMNamePrefix}-${uniqueString('acrvws', utcNow('u'))}'
 param privateDNSZoneSAfileName string
 param privateDNSZoneSAtableName string
@@ -16,8 +17,8 @@ param privateDNSZoneSAqueueName string
 param privateDNSZoneKVName string
 param privateDNSZoneSAName string
 param privateDNSZoneFHIRName string
-param keyvaultName string = 'eslz-kv-${uniqueString('acrvws', utcNow('u'))}'
-param storageAccountName string = 'eslzsa${uniqueString('ahds', utcNow('u'))}'
+param keyvaultName string = '${KeyVaultNamePrefix}-${uniqueString('acrvws', utcNow('u'))}'
+param storageAccountName string = '${StorageAccountNamePrefix}${uniqueString('ahds', utcNow('u'))}'
 param storageAccountType string
 param location string = deployment().location
 param appGatewayName string
@@ -38,7 +39,8 @@ param containerNames array = [
 ]
 
 param fhirName string
-param workspaceName string = 'eslzwks${uniqueString('workspacevws', utcNow('u'))}'
+param FhirWorkspaceNamePrefix string
+param workspaceName string = '${FhirWorkspaceNamePrefix}${uniqueString('workspacevws', utcNow('u'))}'
 param ApiUrlPath string
 
 var primaryBackendEndFQDN = '${APIMName}.azure-api.net'
@@ -51,13 +53,13 @@ var functionContentShareName = 'function'
 // Defining Log Analitics Workspace
 //logAnalyticsWorkspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' existing = {
-  scope: resourceGroup(rgHubName)
+  scope: resourceGroup(rgName)
   name: 'log-${resourceSuffix}'
 }
 
 // Defining appInsights
 resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
-  scope: resourceGroup(rgHubName)
+  scope: resourceGroup(rgName)
   name: 'appi-${resourceSuffix}'
 }
 
@@ -294,11 +296,11 @@ module apimDNSRecords 'modules/vnet/apimprivatednsrecords.bicep' = {
 // Create Public IP for Application Gateway
 module publicipappgw 'modules/vnet/publicip.bicep' = {
   scope: resourceGroup(rg.name)
-  name: 'APPGW-PIP'
+  name: 'ent-dev-fhir-appgw-pip'
   params: {
     availabilityZones: availabilityZones
     location: location
-    publicipName: 'APPGW-PIP'
+    publicipName: 'ent-dev-fhir-appgw-pip'
     publicipproperties: {
       publicIPAllocationMethod: 'Static'
     }
@@ -476,8 +478,6 @@ module bundlequeue 'modules/storage/queue.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
   }
 }
-
-
 
 // Creating Storage file share
 module functioncontentfileshare 'modules/storage/fileshare.bicep' = {

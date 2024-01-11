@@ -3,28 +3,34 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "rgName": {
-      "value": "ESLZ-AHDS-SPOKE"
-    },
-    "rgHubName": {
-      "value": "ESLZ-AHDS-SPOKE"
+      "value": "ent-dev-fhir-rg"
     },
     "keyVaultPrivateEndpointName": {
-      "value": "keyvault-pvt-ep"
+      "value": "ent-dev-fhir-kv-pvt-ep"
     },
     "saPrivateEndpointName": {
-      "value": "sa-pvt-ep"
+      "value": "ent-dev-fhir-sa-pvt-ep"
     },
     "vnetName": {
-      "value": "VNet-SPOKE"
+      "value": "ent-dev-fhir-vnet"
     },
     "subnetName": {
-      "value": "servicespe"
+      "value": "ent-dev-fhir-private-endpoint-subnet"
     },
     "APIMsubnetName": {
-      "value": "APIM"
+      "value": "ent-dev-fhir-apim-subnet"
     },
     "APIMNamePrefix": {
-      "value": "APIM-AHDS"
+      "value": "ent-dev-fhir-apim"
+    },
+    "KeyVaultNamePrefix": {
+      "value": "devfhirkv"
+    },
+    "StorageAccountNamePrefix": {
+      "value": "devfhirsa"
+    },
+    "FhirWorkspaceNamePrefix": {
+      "value": "devfhirws"
     },
     "privateDNSZoneSAfileName": {
       "value": "privatelink.file.core.windows.net"
@@ -42,10 +48,10 @@
       "value": "privatelink.blob.core.windows.net"
     },
     "storageAccountType": {
-      "value": "Standard_GZRS"
+      "value": "Standard_LRS"
     },
     "appGatewayName": {
-      "value": "APPGW"
+      "value": "ent-dev-fhir-appgw"
     },
     "appGwyAutoScale": {
       "value": {
@@ -57,7 +63,7 @@
       "value": ["1", "2", "3"]
     },
     "appGatewaySubnetName": {
-      "value": "AppGWSubnet"
+      "value": "ent-dev-fhir-appgw-subnet"
     },
     "appGatewayFQDN": {
       "value": "tjc.fhir.com"
@@ -69,7 +75,7 @@
       "value": "ENTER-PASSWORD"
     },
     "fhirName": {
-      "value": "fhir-ahds"
+      "value": "devfhirahds"
     },
     "privateDNSZoneFHIRName": {
       "value": "privatelink.azurehealthcareapis.com"
@@ -78,7 +84,7 @@
       "value": "https://raw.githubusercontent.com/Azure/ahds-reference-architecture/main/Scenarios/Baseline/bicep/03-AHDS/swagger/ahds-fhir-swagger.json"
     },
     "resourceSuffix": {
-      "value": "AHDS"
+      "value": "ahds"
     }
   }
 }

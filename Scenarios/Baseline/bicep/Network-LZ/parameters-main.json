@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "rgName": {
-      "value": "ESLZ-AHDS-SPOKE"
+      "value": "ent-dev-fhir-rg"
     },
     "availabilityZones": {
       "value": [
@@ -13,7 +13,7 @@
       ]
     },
     "vnetSpokeName": {
-      "value": "VNet-SPOKE"
+      "value": "ent-dev-fhir-vnet"
     },
     "spokeVNETaddPrefixes": {
       "value": [
@@ -36,13 +36,13 @@
           }
         },
         {
-          "name": "FHIR",
+          "name": "ent-dev-fhir-subnet",
           "properties": {
             "addressPrefix": "10.1.1.0/24"
           }
         },
         {
-          "name": "AppGWSubnet",
+          "name": "ent-dev-fhir-appgw-subnet",
           "properties": {
             "addressPrefix": "10.1.2.0/27",
             "serviceEndpoints": [
@@ -53,14 +53,14 @@
           }
         },
         {
-          "name": "servicespe",
+          "name": "ent-dev-fhir-private-endpoint-subnet",
           "properties": {
             "addressPrefix": "10.1.4.0/24",
             "privateEndpointNetworkPolicies": "Disabled"
           }
         },
         {
-          "name": "APIM",
+          "name": "ent-dev-fhir-apim-subnet",
           "properties": {
             "addressPrefix": "10.1.5.0/24"
           }
@@ -68,12 +68,12 @@
       ]
     },
     "azfwName": {
-      "value": "AZFW"
+      "value": "ent-dev-fhir-fw"
     },
     "fwapplicationRuleCollections": {
       "value": [
         {
-          "name": "Helper-tools",
+          "name": "ent-dev-fhir-fw-app-rule-helper-tools",
           "properties": {
             "priority": 101,
             "action": {
@@ -105,7 +105,7 @@
           }
         },
         {
-          "name": "Egress-application",
+          "name": "ent-dev-fhir-fw-app-rule-egress-application",
           "properties": {
             "priority": 102,
             "action": {
@@ -176,7 +176,7 @@
     "fwnetworkRuleCollections": {
       "value": [
         {
-          "name": "Network-egress",
+          "name": "ent-dev-fhir-fw-net-rule-net-egress",
           "properties": {
             "priority": 200,
             "action": {
@@ -227,21 +227,6 @@
                 "destinationPorts": [
                   "1194"
                 ]
-              },
-              {
-                "name": "Allow-Jumpbox",
-                "protocols": [
-                  "Any"
-                ],
-                "sourceAddresses": [
-                  "10.0.3.0/24"
-                ],
-                "destinationAddresses": [
-                  "*"
-                ],
-                "destinationPorts": [
-                  "*"
-                ]
               }
             ]
           }
@@ -259,28 +244,28 @@
       }
     },
     "appGatewaySubnetName":{
-      "value": "AppGWSubnet"
+      "value": "ent-dev-fhir-appgw-subnet"
     },
     "rtFHIRSubnetName": {
-      "value": "FHIR-RT"
+      "value": "ent-dev-fhir-subnet-rt"
     },
     "firewallIP": {
       "value": "10.0.1.4"
     },
     "rtAppGWSubnetName": {
-      "value": "AppGWSubnet-RT"
+      "value": "ent-dev-fhir-appgw-subnet-rt"
     },
     "nsgFHIRName": {
-      "value": "FHIR-NSG"
+      "value": "ent-dev-fhir-nsg"
     },
     "FHIRSubnetName": {
-      "value": "FHIR"
+      "value": "ent-dev-fhir-subnet"
     },
     "nsgAppGWName": {
-      "value": "APPGW-NSG"
+      "value": "ent-dev-fhir-appgw-nsg"
     },
     "resourceSuffix": {
-      "value": "AHDS"
+      "value": "ahds"
     }
   }
 }

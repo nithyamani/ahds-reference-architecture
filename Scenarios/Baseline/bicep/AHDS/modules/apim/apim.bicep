@@ -9,11 +9,11 @@ param apimSubnetId string
 
 @description('The email address of the publisher of the APIM resource.')
 @minLength(1)
-param publisherEmail string = 'apim@contoso.com'
+param publisherEmail string = 'apim@jointcommission.org'
 
 @description('Company name of the publisher of the APIM resource.')
 @minLength(1)
-param publisherName string = 'Contoso'
+param publisherName string = 'TJC'
 
 @description('The pricing tier of the APIM resource.')
 param skuName string = 'Developer'

@@ -106,19 +106,11 @@ if (( ${#azProvidersNotRegistered[@]} > 0 )); then
   echo "Done registering required Azure Providers"
 fi
 
-# AZ CLI
-# 01-Network-Hub
-# *** The JumpBox VM User Name and Password will be auto generated and will be saved at the Key Vault under HUB Resource Group
-# You have to give yourself access in order to read the both Secrets with username and password
-# az deployment sub create -n "ESLZ-HUB-AHDS" -l $answerAzRegion -f 01-Network-Hub/main.bicep -p 01-Network-Hub/parameters-main.json
-#az deployment sub create -n "ESLZ-AHDS-HUB-UDR" -l $answerAzRegion -f 01-Network-Hub/updateUDR.bicep -p 01-Network-Hub/parameters-updateUDR.json
-#az deployment sub create -n "ESLZ-HUB-VM" -l $answerAzRegion -f 01-Network-Hub/deploy-vm.bicep -p 01-Network-Hub/parameters-deploy-vm.json
+# Network-LZ
+rgSpoke=ent-dev-fhir-rg
+az deployment sub create -n "ent-dev-fhir-network" -l $answerAzRegion -f Network-LZ/main.bicep -p Network-LZ/parameters-main.json -p rgName=$rgSpoke
 
-# 02-Network-LZ
-rgSpoke=ESLZ-AHDS-SPOKE
-az deployment sub create -n "ESLZ-Spoke-AHDS" -l $answerAzRegion -f 02-Network-LZ/main.bicep -p 02-Network-LZ/parameters-main.json -p rgName=$rgSpoke
-
-# 03-AHDS
-publicipappgw=$(az deployment sub create -n "ESLZ-AHDS" -l $answerAzRegion -f 03-AHDS/main.bicep -p 03-AHDS/parameters-main.json -p rgName=$rgSpoke -p appGatewayFQDN=$answerAppGWFQDN --query "properties.outputs.publicipappgw.value" -o tsv)
+# AHDS
+publicipappgw=$(az deployment sub create -n "ent-dev-fhir-ahds" -l $answerAzRegion -f AHDS/main.bicep -p AHDS/parameters-main.json -p rgName=$rgSpoke -p appGatewayFQDN=$answerAppGWFQDN --query "properties.outputs.publicipappgw.value" -o tsv)
 echo "Please create a DNS record for the Application Gateway Public IP: $publicipappgw with the FQDN: $answerAppGWFQDN"
 echo Done
