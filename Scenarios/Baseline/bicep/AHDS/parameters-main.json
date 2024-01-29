@@ -8,9 +8,6 @@
     "keyVaultPrivateEndpointName": {
       "value": "ent-dev-fhir-kv-pvt-ep"
     },
-    "saPrivateEndpointName": {
-      "value": "ent-dev-fhir-sa-pvt-ep"
-    },
     "vnetName": {
       "value": "ent-dev-fhir-vnet"
     },
@@ -26,29 +23,11 @@
     "KeyVaultNamePrefix": {
       "value": "devfhirkv"
     },
-    "StorageAccountNamePrefix": {
-      "value": "devfhirsa"
-    },
     "FhirWorkspaceNamePrefix": {
       "value": "devfhirws"
     },
-    "privateDNSZoneSAfileName": {
-      "value": "privatelink.file.core.windows.net"
-    },
-    "privateDNSZoneSAtableName": {
-      "value": "privatelink.table.core.windows.net"
-    },
-    "privateDNSZoneSAqueueName": {
-      "value": "privatelink.queue.core.windows.net"
-    },
     "privateDNSZoneKVName": {
       "value": "privatelink.vaultcore.azure.net"
-    },
-    "privateDNSZoneSAName": {
-      "value": "privatelink.blob.core.windows.net"
-    },
-    "storageAccountType": {
-      "value": "Standard_LRS"
     },
     "appGatewayName": {
       "value": "ent-dev-fhir-appgw"

@@ -3,23 +3,15 @@ targetScope = 'subscription'
 param resourceSuffix string
 param rgName string
 param keyVaultPrivateEndpointName string
-param saPrivateEndpointName string
 param vnetName string
 param subnetName string
 param APIMsubnetName string
 param APIMNamePrefix string
 param KeyVaultNamePrefix string
-param StorageAccountNamePrefix string
 param APIMName string = '${APIMNamePrefix}-${uniqueString('acrvws', utcNow('u'))}'
-param privateDNSZoneSAfileName string
-param privateDNSZoneSAtableName string
-param privateDNSZoneSAqueueName string
 param privateDNSZoneKVName string
-param privateDNSZoneSAName string
 param privateDNSZoneFHIRName string
 param keyvaultName string = '${KeyVaultNamePrefix}-${uniqueString('acrvws', utcNow('u'))}'
-param storageAccountName string = '${StorageAccountNamePrefix}${uniqueString('ahds', utcNow('u'))}'
-param storageAccountType string
 param location string = deployment().location
 param appGatewayName string
 param appGatewaySubnetName string
@@ -30,13 +22,6 @@ param appGatewayFQDN string
 param appGatewayCertType string
 @secure()
 param certPassword string
-param containerNames array = [
-  'bundles'
-  'ndjson'
-  'zip'
-  'export'
-  'export-trigger'
-]
 
 param fhirName string
 param FhirWorkspaceNamePrefix string
@@ -46,9 +31,7 @@ param ApiUrlPath string
 var primaryBackendEndFQDN = '${APIMName}.azure-api.net'
 
 // Variables
-var storageFQDN = '${storageAccountName}.blob.core.windows.net'
 var audience = 'https://${workspaceName}-${fhirName}.fhir.azurehealthcareapis.com'
-var functionContentShareName = 'function'
 
 // Defining Log Analitics Workspace
 //logAnalyticsWorkspace
@@ -117,146 +100,6 @@ module privateEndpointKVDNSSetting 'modules/vnet/privatedns.bicep' = {
   params: {
     privateDNSZoneId: privateDNSZoneKV.id
     privateEndpointName: privateEndpointKeyVault.name
-  }
-}
-
-// Creating Storage Account for FIHRs, Functions, App Services in general
-module storage 'modules/storage/storage.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: storageAccountName
-  params: {
-    location: location
-    storageAccountName: storageAccountName
-    storageAccountType: storageAccountType
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
-  }
-}
-
-// Creating Private Endpoint for Storage Account Blob
-module privateEndpointSA 'modules/vnet/privateendpoint.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: saPrivateEndpointName
-  params: {
-    location: location
-    groupIds: [
-      'blob'
-    ]
-    privateEndpointName: saPrivateEndpointName
-    privatelinkConnName: '${saPrivateEndpointName}-conn'
-    resourceId: storage.outputs.storageAccountId
-    subnetid: servicesSubnet.id
-  }
-}
-
-// Defining Storage Account Private DNS Zone Blob
-resource privateDNSZoneSA 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: privateDNSZoneSAName
-}
-
-// Creating Private Endpoint Storage Account Blob
-module privateEndpointSADNSSetting 'modules/vnet/privatedns.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'sa-pvtep-dns'
-  params: {
-    privateDNSZoneId: privateDNSZoneSA.id
-    privateEndpointName: privateEndpointSA.name
-  }
-}
-
-// Creating Private Endpoint for Storage Account File
-module privateEndpointSAfile 'modules/vnet/privateendpoint.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: '${saPrivateEndpointName}-file'
-  params: {
-    location: location
-    groupIds: [
-      'file'
-    ]
-    privateEndpointName: '${saPrivateEndpointName}-file'
-    privatelinkConnName: '${saPrivateEndpointName}-file-conn'
-    resourceId: storage.outputs.storageAccountId
-    subnetid: servicesSubnet.id
-  }
-}
-
-// Defining Storage Account Private DNS Zone File
-resource privateDNSZoneSAfile 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: privateDNSZoneSAfileName
-}
-
-// Creating Private Endpoint DNS Settings for Storage Account File
-module privateEndpointSAfileDNSSetting 'modules/vnet/privatedns.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'sa-file-pvtep-dns'
-  params: {
-    privateDNSZoneId: privateDNSZoneSAfile.id
-    privateEndpointName: privateEndpointSAfile.name
-  }
-}
-
-// Creating Private Endpoint for Storage Account Table
-module privateEndpointSAtable 'modules/vnet/privateendpoint.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: '${saPrivateEndpointName}-table'
-  params: {
-    location: location
-    groupIds: [
-      'table'
-    ]
-    privateEndpointName: '${saPrivateEndpointName}-table'
-    privatelinkConnName: '${saPrivateEndpointName}-table-conn'
-    resourceId: storage.outputs.storageAccountId
-    subnetid: servicesSubnet.id
-  }
-}
-
-// Defining Storage Account Private DNS Zone Table
-resource privateDNSZoneSAtable 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: privateDNSZoneSAtableName
-}
-
-// Creating Private Endpoint DNS Settings for Storage Account Table
-module privateEndpointSAtableDNSSetting 'modules/vnet/privatedns.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'sa-table-pvtep-dns'
-  params: {
-    privateDNSZoneId: privateDNSZoneSAtable.id
-    privateEndpointName: privateEndpointSAtable.name
-  }
-}
-
-// Creating Private Endpoint for Storage Account Queue
-module privateEndpointSAqueue 'modules/vnet/privateendpoint.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: '${saPrivateEndpointName}-queue'
-  params: {
-    location: location
-    groupIds: [
-      'queue'
-    ]
-    privateEndpointName: '${saPrivateEndpointName}-queue'
-    privatelinkConnName: '${saPrivateEndpointName}-queue-conn'
-    resourceId: storage.outputs.storageAccountId
-    subnetid: servicesSubnet.id
-  }
-}
-
-// Defining Storage Account Private DNS Zone Queue
-resource privateDNSZoneSAqueue 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: privateDNSZoneSAqueueName
-}
-
-// Creating Private Endpoint DNS Settings for Storage Account Queue
-module privateEndpointSAqueueDNSSetting 'modules/vnet/privatedns.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'sa-queue-pvtep-dns'
-  params: {
-    privateDNSZoneId: privateDNSZoneSAqueue.id
-    privateEndpointName: privateEndpointSAqueue.name
   }
 }
 
@@ -339,9 +182,6 @@ module kvrole 'modules/Identity/kvrole.bicep' = {
   }
 }
 
-
-
-
 // Generating/Loading certificate to Azure Key Vault (Depending in the parameters it can load or generete a new Self-Signed certificate)
 module certificate 'modules/vnet/certificate.bicep' = {
   name: 'certificate'
@@ -375,7 +215,6 @@ module appgw 'modules/vnet/appgw.bicep' = {
     keyVaultSecretId: certificate.outputs.secretUri
     primaryBackendEndFQDN: primaryBackendEndFQDN
     diagnosticWorkspaceId: logAnalyticsWorkspace.id
-    storageFQDN: storageFQDN
   }
   dependsOn: [
    apimImportAPI
@@ -394,16 +233,6 @@ module apimrole 'modules/Identity/apimrole.bicep' = {
   }
 }
 
-module sarole 'modules/Identity/sarole.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'sarole'
-  params: {
-    principalId: appgwIdentity.outputs.azidentity.properties.principalId
-    roleGuid: '17d1049b-9a84-46fb-8f53-869881c3d3ab' //APIM Contributor
-    storageAccountName: storage.name
-  }
-}
-
 // Creating FHIR Service
 module fhir 'modules/ahds/fhirservice.bicep' = {
   scope: resourceGroup(rg.name)
@@ -415,8 +244,6 @@ module fhir 'modules/ahds/fhirservice.bicep' = {
     diagnosticWorkspaceId: logAnalyticsWorkspace.id
   }
 }
-
-
 
 // Creating FHIR Private Endpoint
 module privateEndpointFHIR 'modules/vnet/privateendpoint.bicep' = {
@@ -447,45 +274,6 @@ module privateEndpointFHIRDNSSetting 'modules/vnet/privatedns.bicep' = {
   params: {
     privateDNSZoneId: privateDNSZoneFHIR.id
     privateEndpointName: privateEndpointFHIR.name
-  }
-}
-
-// Creating Storage Container
-module container 'modules/storage/container.bicep' = [for name in containerNames: {
-  scope: resourceGroup(rg.name)
-  name: '${name}'
-  params: {
-    containername: name
-    storageAccountName: storage.outputs.storageAccountName
-  }
-}]
-
-// Creating ndjsonqueue Storage Queue
-module ndjsonqueue 'modules/storage/queue.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'ndjsonqueue'
-  params: {
-    queueName: 'ndjsonqueue'
-    storageAccountName: storage.outputs.storageAccountName
-  }
-}
-
-module bundlequeue 'modules/storage/queue.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'bundlequeue'
-  params: {
-    queueName: 'bundlequeue'
-    storageAccountName: storage.outputs.storageAccountName
-  }
-}
-
-// Creating Storage file share
-module functioncontentfileshare 'modules/storage/fileshare.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: functionContentShareName
-  params: {
-    storageAccountName: storage.outputs.storageAccountName
-    functionContentShareName: functionContentShareName
   }
 }
 
@@ -522,17 +310,6 @@ module fsreskvsecret 'modules/keyvault/kvsecrets.bicep' = {
   }
 }
 
-// Creating KeyVault Secret FS-STORAGEACCT
-module sakvsecret 'modules/keyvault/kvsecrets.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'fsstorage'
-  params: {
-    kvname: keyvault.outputs.keyvaultName
-    secretName: 'FBI-STORAGEACCT'
-    secretValue: storage.outputs.storagecnn
-  }
-}
-
 // Importing FHIR at APIM (This is using deployment script, it will load the Swagger API definition from GitHub)
 module apimImportAPI 'modules/apim/api-deploymentScript.bicep' = {
   name: 'apimImportAPI'
@@ -552,54 +329,6 @@ module apimImportAPI 'modules/apim/api-deploymentScript.bicep' = {
   ]
 }
 
-module bundleeventsub 'modules/storage/eventsub.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'bundlequeuesub'
-  params: {
-    queueName: 'bundlequeue'
-    storageAccountName: storage.outputs.storageAccountName
-    subjectbegins: '/blobServices/default/containers/bundles'
-    subjectends: '.json'
-  }
-  dependsOn: [
-    bundlequeue
-  ]
-}
-
-module ndjsoneventsub 'modules/storage/eventsub.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'ndjsonqueuesub'
-  params: {
-    queueName: 'ndjsonqueue'
-    storageAccountName: storage.outputs.storageAccountName
-    subjectbegins: '/blobServices/default/containers/ndjson'
-    subjectends: '.ndjson'
-  }
-  dependsOn: [
-    ndjsonqueue
-  ]
-}
-
-module storageNetworkUpdate 'modules/storage/sanetwork-deploymentScript.bicep' = {
-  name: 'storageNetworkUpdate'
-  scope: resourceGroup(rg.name)
-  params: {
-    managedIdentity: appgwIdentity.outputs.azidentity
-    location: location
-    RGName: rg.name
-    subnet: appgwSubnet.id
-    storageAccountName: storageAccountName
-  }
-  dependsOn: [
-    ndjsonqueue
-    bundleeventsub
-    appgw
-    sarole
-  ]
-}
-
-
 // Outputs
 output keyvaultName string = keyvault.name
-output storageName string = storage.name
 output publicipappgw string = publicipappgw.outputs.IpAddress

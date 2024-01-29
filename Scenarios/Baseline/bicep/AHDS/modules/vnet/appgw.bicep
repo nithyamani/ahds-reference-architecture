@@ -7,7 +7,6 @@ param appGwyAutoScale object
 param appGatewayFQDN string = 'api.example.com'
 param primaryBackendEndFQDN string
 param appGatewayIdentityId string
-param storageFQDN string
 
 @secure()
 param keyVaultSecretId string
@@ -52,10 +51,8 @@ var frontendIPConfigurationName = 'appGatewayFrontendIP'
 var httplistenerName = 'httplistener'
 var httpslistenerName = 'httpslistener'
 var backendAddressFhirPoolName = 'backend-fhir-pool'
-var backendAddressSaPoolName = 'backend-storage-pool'
 var backendHttpSettingsCollectionName = 'backend-http-settings'
 var backendHttpsSettingsCollectionName = 'backend-https-settings'
-var backendSaSettingsCollectionName = 'backend-Storage-settings'
 
 var diagnosticsLogsSpecified = [for category in filter(diagnosticLogCategoriesToEnable, item => item != 'allLogs'): {
   category: category
@@ -173,17 +170,6 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
           ]
         }
       }
-      {
-        id: backendAddressSaPoolName
-        name: backendAddressSaPoolName
-        properties: {
-          backendAddresses: [
-            {
-              fqdn: storageFQDN
-            }
-          ]
-        }
-      }
     ]
     backendHttpSettingsCollection: [
       {
@@ -208,21 +194,6 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
           probe: {
             //id: '${resourceId('Microsoft.Network/applicationGateways', appgwname)}/probes/APIM'
             id: resourceId('Microsoft.Network/applicationGateways/probes', appgwname, 'APIM')
-          }
-        }
-      }
-      {
-        name: backendSaSettingsCollectionName
-        properties: {
-          port: 443
-          protocol: 'Https'
-          cookieBasedAffinity: 'Disabled'
-          hostName: storageFQDN
-          pickHostNameFromBackendAddress: false
-          requestTimeout: 30
-          probe: {
-            //id: '${resourceId('Microsoft.Network/applicationGateways', appgwname)}/probes/APIM'
-            id: resourceId('Microsoft.Network/applicationGateways/probes', appgwname, 'Storage')
           }
         }
       }
@@ -264,10 +235,10 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
         name: 'path-redirect'
         properties: {
           defaultBackendAddressPool: {
-            id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', appgwname,backendAddressSaPoolName)
+            id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', appgwname,backendAddressFhirPoolName)
           }
           defaultBackendHttpSettings: {
-            id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appgwname,backendSaSettingsCollectionName)
+            id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appgwname,backendHttpsSettingsCollectionName)
           }
           pathRules: [
             {
@@ -305,10 +276,10 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
                   '/*'
                 ]
                 backendAddressPool: {
-                  id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', appgwname,backendAddressSaPoolName)
+                  id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', appgwname,backendAddressFhirPoolName)
                 }
                 backendHttpSettings: {
-                  id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appgwname,backendSaSettingsCollectionName)
+                  id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appgwname,backendHttpsSettingsCollectionName)
                 }
               }
             }
@@ -353,24 +324,6 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
           }
         }
       }
-      {
-        name: 'Storage'
-         properties: {
-          protocol: 'Https'
-          host: storageFQDN
-          path: '/'
-          interval: 30
-          timeout: 30
-          unhealthyThreshold: 3
-          pickHostNameFromBackendHttpSettings: false
-        minServers: 0
-          match: {
-            statusCodes: [
-              '400'
-            ]
-        }
-     }  
-}
     ]
     webApplicationFirewallConfiguration: {
       enabled: true

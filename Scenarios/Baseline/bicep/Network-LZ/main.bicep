@@ -22,7 +22,6 @@ param fwnatRuleCollections array
 param availabilityZones array
 param dhcpOptions object
 
-
 // Creating Resource Group
 module rg 'modules/resource-group/rg.bicep' = {
   name: rgName
@@ -173,82 +172,6 @@ module privateDNSLinkVaultSpoke 'modules/vnet/privatednslink.bicep' = {
     privateDnsZoneName: privatednsVaultZone.outputs.privateDNSZoneName
     vnetId: vnetspoke.outputs.vnetId
     linkName: 'link-spoke'
-  }
-}
-
-// Creating Private DNS Zone for Storage Account Blob
-module privatednsSAZone 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privatednsSAZone'
-  params: {
-    privateDNSZoneName: 'privatelink.blob.${environment().suffixes.storage}'
-  }
-}
-
-// Linking Private DNS Zone for Storage Account Blob to VNet
-module privateDNSLinkSA 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privateDNSLinkSA'
-  params: {
-    privateDnsZoneName: privatednsSAZone.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
-  }
-}
-
-// Creating Private DNS Zone for Storage Account File
-module privatednsSAfileZone 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privatednsSAfileZone'
-  params: {
-    privateDNSZoneName: 'privatelink.file.${environment().suffixes.storage}'
-  }
-}
-
-// Linking Private DNS Zone for Storage Account File to VNet
-module privateDNSLinkSAfile 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privateDNSLinkSAfile'
-  params: {
-    privateDnsZoneName: privatednsSAfileZone.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
-  }
-}
-
-// Creating Private DNS Zone for Storage Account Table
-module privatednsSAtableZone 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privatednsSAtableZone'
-  params: {
-    privateDNSZoneName: 'privatelink.table.${environment().suffixes.storage}'
-  }
-}
-
-// Linking Private DNS Zone for Storage Account Table to VNet
-module privateDNSLinkSAtable 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privateDNSLinkSAtable'
-  params: {
-    privateDnsZoneName: privatednsSAtableZone.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
-  }
-}
-
-// Creating Private DNS Zone for Storage Account Queue
-module privatednsSAqueueZone 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privatednsSAqueueZone'
-  params: {
-    privateDNSZoneName: 'privatelink.queue.${environment().suffixes.storage}'
-  }
-}
-
-// Linking Private DNS Zone for Storage Account Queue to VNet
-module privateDNSLinkSAqueue 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'privateDNSLinkSAqueue'
-  params: {
-    privateDnsZoneName: privatednsSAqueueZone.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
   }
 }
 
@@ -431,7 +354,6 @@ module nsgappgwsubnet 'modules/vnet/nsg.bicep' = {
       }
     ]
   }
-
 }
 
 // Creating AppGW Route Table
