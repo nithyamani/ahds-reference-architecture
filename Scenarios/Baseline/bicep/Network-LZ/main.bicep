@@ -4,7 +4,6 @@ targetScope = 'subscription'
 param rgName string
 param vnetSpokeName string
 param rtFHIRSubnetName string
-param firewallIP string
 param nsgFHIRName string
 param nsgAppGWName string
 param rtAppGWSubnetName string
@@ -15,12 +14,6 @@ param FHIRSubnetName string
 param spokeVNETaddPrefixes array
 
 param spokeSubnets array
-param azfwName string
-param fwapplicationRuleCollections array
-param fwnetworkRuleCollections array
-param fwnatRuleCollections array
-param availabilityZones array
-param dhcpOptions object
 
 // Creating Resource Group
 module rg 'modules/resource-group/rg.bicep' = {
@@ -65,24 +58,6 @@ module routetable 'modules/vnet/routetable.bicep' = {
   }
 }
 
-// Adding FHIR Route table entries
-module routetableroutes 'modules/vnet/routetableroutes.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'FHIR-to-internet'
-  params: {
-    routetableName: rtFHIRSubnetName
-    routeName: 'FHIR-to-internet'
-    properties: {
-      nextHopType: 'VirtualAppliance'
-      nextHopIpAddress: firewallIP
-      addressPrefix: '0.0.0.0/0'
-    }
-  }
-  dependsOn: [
-    routetable
-  ]
-}
-
 // Creating VNET
 module vnetspoke 'modules/vnet/vnet.bicep' = {
   scope: resourceGroup(rg.name)
@@ -94,7 +69,6 @@ module vnetspoke 'modules/vnet/vnet.bicep' = {
     }
     vnetName: vnetSpokeName
     subnets: spokeSubnets
-    dhcpOptions: dhcpOptions
     diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
   }
   dependsOn: [
@@ -102,58 +76,6 @@ module vnetspoke 'modules/vnet/vnet.bicep' = {
   ]
 }
 
-// Creating Azure Firewall public IP
-module publicipfw 'modules/vnet/publicip.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'ent-dev-fhir-fw-pip'
-  params: {
-    availabilityZones: availabilityZones
-    location: location
-    publicipName: 'ent-dev-fhir-fw-pip'
-    publicipproperties: {
-      publicIPAllocationMethod: 'Static'
-    }
-    publicipsku: {
-      name: 'Standard'
-      tier: 'Regional'
-    }
-    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
-  }
-}
-
-// Defining Azure Firewall Subnet
-resource subnetfw 'Microsoft.Network/virtualNetworks/subnets@2020-11-01' existing = {
-  scope: resourceGroup(rg.name)
-  name: '${vnetspoke.name}/AzureFirewallSubnet'
-}
-
-// Creating Azure Firewall
-module azfirewall 'modules/vnet/firewall.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: azfwName
-  params: {
-    availabilityZones: availabilityZones
-    location: location
-    fwname: azfwName
-    fwipConfigurations: [
-      {
-        name: 'ent-dev-fhir-fw-pip'
-        properties: {
-          subnet: {
-            id: subnetfw.id
-          }
-          publicIPAddress: {
-            id: publicipfw.outputs.publicipId
-          }
-        }
-      }
-    ]
-    fwapplicationRuleCollections: fwapplicationRuleCollections
-    fwnatRuleCollections: fwnatRuleCollections
-    fwnetworkRuleCollections: fwnetworkRuleCollections
-    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
-  }
-}
 
 // Creating Private DNS Zone for Key Vault
 module privatednsVaultZone 'modules/vnet/privatednszone.bicep' = {
