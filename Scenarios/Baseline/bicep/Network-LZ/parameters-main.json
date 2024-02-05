@@ -23,12 +23,6 @@
           }
         },
         {
-          "name": "AzureFirewallSubnet",
-          "properties": {
-            "addressPrefix": "10.0.1.0/26"
-          }
-        },
-        {
           "name": "ent-dev-fhir-subnet",
           "properties": {
             "addressPrefix": "10.1.1.0/24"
