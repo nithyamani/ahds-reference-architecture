@@ -6,6 +6,7 @@ param appGatewayFQDN          string
 @secure()
 param certPassword            string
 param appGatewayCertType      string
+param rgName                  string
 
 // Variables
 var secretName = replace(appGatewayFQDN,'.', '-')
@@ -50,9 +51,10 @@ resource appGatewayCertificate 'Microsoft.Resources/deploymentScripts@2020-10-01
   kind: 'AzurePowerShell'
   properties: {
     azPowerShellVersion: '6.6'
-    arguments: ' -vaultName ${keyVaultName} -certificateName ${secretName} -subjectName ${subjectName} -certPwd ${certPwd} -certDataString ${certData} -certType ${appGatewayCertType} -subscriptionId ${subscription().subscriptionId}'
+    arguments: ' -RG ${rgName} -vaultName ${keyVaultName} -certificateName ${secretName} -subjectName ${subjectName} -certPwd ${certPwd} -certDataString ${certData} -certType ${appGatewayCertType} -subscriptionId ${subscription().subscriptionId}'
     scriptContent: '''
       param(
+      [string] [Parameter(Mandatory=$true)] $RG,
       [string] [Parameter(Mandatory=$true)] $vaultName,
       [string] [Parameter(Mandatory=$true)] $certificateName,
       [string] [Parameter(Mandatory=$true)] $subjectName,
@@ -108,18 +110,20 @@ resource appGatewayCertificate 'Microsoft.Resources/deploymentScripts@2020-10-01
         # it takes a few seconds for KeyVault to finish
         $tries = 0
         do {
-          Write-Host 'Waiting for certificate creation completion...'
+          Write-Host "Waiting for certificate creation completion... in RG: $RG"
           Start-Sleep -Seconds 10
           $operation = Get-AzKeyVaultCertificateOperation -VaultName $vaultName -Name $certificateName
           $tries++
 
           if ($operation.Status -eq 'failed')
           {
+          Write-Host 'Operation status is failed....'
           throw 'Creating certificate $certificateName in vault $vaultName failed with error $($operation.ErrorMessage)'
           }
 
           if ($tries -gt 120)
           {
+          Write-Host "Timed out waiting for creation of certificate $certificateName in vault $vaultName"
           throw 'Timed out waiting for creation of certificate $certificateName in vault $vaultName'
           }
         } while ($operation.Status -ne 'completed')
@@ -142,7 +146,7 @@ resource appGatewayCertificate 'Microsoft.Resources/deploymentScripts@2020-10-01
       }
 
       Write-Host "Removing current public ip address from allow list"
-      Remove-AzKeyVaultNetworkRule -VaultName $vaultName -IpAddressRange $publicIp -SubscriptionId $subscriptionId
+      Remove-AzKeyVaultNetworkRule -ResourceGroupName $RG -VaultName $vaultName -IpAddressRange $publicIp -SubscriptionId $subscriptionId
       '''
     retentionInterval: 'P1D'
     cleanupPreference: 'OnSuccess'

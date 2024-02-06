@@ -193,6 +193,7 @@ module certificate 'modules/vnet/certificate.bicep' = {
     appGatewayFQDN: appGatewayFQDN
     appGatewayCertType: appGatewayCertType
     certPassword: certPassword
+    rgName: rg.name
   }
   dependsOn: [
     kvrole
