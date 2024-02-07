@@ -1,7 +1,8 @@
 targetScope = 'subscription'
 // Parameters
 param resourceSuffix string
-param rgName string
+param apimRGName string
+param fhirRGName string
 param keyVaultPrivateEndpointName string
 param vnetName string
 param subnetName string
@@ -36,30 +37,30 @@ var audience = 'https://${workspaceName}-${fhirName}.fhir.azurehealthcareapis.co
 // Defining Log Analitics Workspace
 //logAnalyticsWorkspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' existing = {
-  scope: resourceGroup(rgName)
+  scope: resourceGroup(apimRGName)
   name: 'log-${resourceSuffix}'
 }
 
 // Defining appInsights
 resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
-  scope: resourceGroup(rgName)
+  scope: resourceGroup(apimRGName)
   name: 'appi-${resourceSuffix}'
 }
 
-// Defining Resource Groupt
-resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
-  name: rgName
+// Defining Resource Group
+resource apimRG 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
+  name: apimRGName
 }
 
 // Defining Private Endpoint Subnet
 resource servicesSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: '${vnetName}/${subnetName}'
 }
 
 // Creating Key Vault
 module keyvault 'modules/keyvault/keyvault.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: keyvaultName
   params: {
     location: location
@@ -73,7 +74,7 @@ module keyvault 'modules/keyvault/keyvault.bicep' = {
 
 // Creating Private Endpoint Key Vault
 module privateEndpointKeyVault 'modules/vnet/privateendpoint.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: keyVaultPrivateEndpointName
   params: {
     location: location
@@ -89,13 +90,13 @@ module privateEndpointKeyVault 'modules/vnet/privateendpoint.bicep' = {
 
 // Defining Key Vault Private DNS Zone
 resource privateDNSZoneKV 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: privateDNSZoneKVName
 }
 
 // Creating Key Vault Private DNS Settings for Private DNS Zone
 module privateEndpointKVDNSSetting 'modules/vnet/privatedns.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'kv-pvtep-dns'
   params: {
     privateDNSZoneId: privateDNSZoneKV.id
@@ -106,14 +107,14 @@ module privateEndpointKVDNSSetting 'modules/vnet/privatedns.bicep' = {
 // APIM
 // Defining APIM Subnet
 resource APIMSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: '${vnetName}/${APIMsubnetName}'
 }
 
 // Creating APIM
 module apimModule 'modules/apim/apim.bicep' = {
   name: 'apimDeploy'
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   params: {
     apimName: APIMName
     apimSubnetId: APIMSubnet.id
@@ -127,10 +128,10 @@ module apimModule 'modules/apim/apim.bicep' = {
 
 // Adding APIM DNS Records
 module apimDNSRecords 'modules/vnet/apimprivatednsrecords.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'apimDNSRecords'
   params: {
-    RG: rg.name
+    RG: apimRG.name
     apimName: apimModule.outputs.apimName
   }
 }
@@ -138,12 +139,12 @@ module apimDNSRecords 'modules/vnet/apimprivatednsrecords.bicep' = {
 // AppGW
 // Create Public IP for Application Gateway
 module publicipappgw 'modules/vnet/publicip.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: 'ent-dev-fhir-appgw-pip'
+  scope: resourceGroup(apimRG.name)
+  name: 'ent-dev-appgw-pip'
   params: {
     availabilityZones: availabilityZones
     location: location
-    publicipName: 'ent-dev-fhir-appgw-pip'
+    publicipName: 'ent-dev-appgw-pip'
     publicipproperties: {
       publicIPAllocationMethod: 'Static'
     }
@@ -157,13 +158,13 @@ module publicipappgw 'modules/vnet/publicip.bicep' = {
 
 // Defining Application Gateway Subnet
 resource appgwSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: '${vnetName}/${appGatewaySubnetName}'
 }
 
 // Creating Application Gateway Identity (used for AppGW access Key Vault to load Certificate)
 module appgwIdentity 'modules/Identity/userassigned.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'appgwIdentity'
   params: {
     location: location
@@ -173,7 +174,7 @@ module appgwIdentity 'modules/Identity/userassigned.bicep' = {
 
 // Giving Access to Key Vault for Application Gateway Identity to read Keys, Secrets, Certificates
 module kvrole 'modules/Identity/kvrole.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'kvrole'
   params: {
     principalId: appgwIdentity.outputs.azidentity.properties.principalId
@@ -185,7 +186,7 @@ module kvrole 'modules/Identity/kvrole.bicep' = {
 // Generating/Loading certificate to Azure Key Vault (Depending in the parameters it can load or generete a new Self-Signed certificate)
 module certificate 'modules/vnet/certificate.bicep' = {
   name: 'certificate'
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   params: {
     managedIdentity: appgwIdentity.outputs.azidentity
     keyVaultName: keyvaultName
@@ -193,7 +194,7 @@ module certificate 'modules/vnet/certificate.bicep' = {
     appGatewayFQDN: appGatewayFQDN
     appGatewayCertType: appGatewayCertType
     certPassword: certPassword
-    rgName: rg.name
+    rgName: apimRG.name
   }
   dependsOn: [
     kvrole
@@ -202,7 +203,7 @@ module certificate 'modules/vnet/certificate.bicep' = {
 
 // Creating Application Gateway (This resource will only be created after APIM API Import finishes)
 module appgw 'modules/vnet/appgw.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'appgw'
   params: {
     appGwyAutoScale: appGwyAutoScale
@@ -225,7 +226,7 @@ module appgw 'modules/vnet/appgw.bicep' = {
 // Create FHIR service
 // Giving Access to AppGW Identity to APIM, since we are re-using the same MI to load the APIM FHIR API at APIM
 module apimrole 'modules/Identity/apimrole.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'apimrole'
   params: {
     principalId: appgwIdentity.outputs.azidentity.properties.principalId
@@ -236,7 +237,7 @@ module apimrole 'modules/Identity/apimrole.bicep' = {
 
 // Creating FHIR Service
 module fhir 'modules/ahds/fhirservice.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(fhirRGName)
   name: fhirName
   params: {
     fhirName: fhirName
@@ -248,7 +249,7 @@ module fhir 'modules/ahds/fhirservice.bicep' = {
 
 // Creating FHIR Private Endpoint
 module privateEndpointFHIR 'modules/vnet/privateendpoint.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(fhirRGName)
   name: 'fhir-pvtep'
   params: {
     location: location
@@ -264,13 +265,13 @@ module privateEndpointFHIR 'modules/vnet/privateendpoint.bicep' = {
 
 // Defining FHIR Private DNS Zone for FHIR
 resource privateDNSZoneFHIR 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(fhirRGName)
   name: privateDNSZoneFHIRName
 }
 
 // Creating Private DNS Setting for FHIR Private DNS Settings
 module privateEndpointFHIRDNSSetting 'modules/vnet/privatedns.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(fhirRGName)
   name: 'fhir-pvtep-dns'
   params: {
     privateDNSZoneId: privateDNSZoneFHIR.id
@@ -280,7 +281,7 @@ module privateEndpointFHIRDNSSetting 'modules/vnet/privatedns.bicep' = {
 
 // Creating KeyVault Secret FS-URL
 module fsurlkvsecret 'modules/keyvault/kvsecrets.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'fsurl'
   params: {
     kvname: keyvault.outputs.keyvaultName
@@ -291,7 +292,7 @@ module fsurlkvsecret 'modules/keyvault/kvsecrets.bicep' = {
 
 // Creating KeyVault Secret FS-TENANT-NAME
 module tenantkvsecret 'modules/keyvault/kvsecrets.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'fstenant'
   params: {
     kvname: keyvault.outputs.keyvaultName
@@ -302,7 +303,7 @@ module tenantkvsecret 'modules/keyvault/kvsecrets.bicep' = {
 
 // Creating KeyVault Secret FS-RESOURCE
 module fsreskvsecret 'modules/keyvault/kvsecrets.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'fsresource'
   params: {
     kvname: keyvault.outputs.keyvaultName
@@ -314,11 +315,11 @@ module fsreskvsecret 'modules/keyvault/kvsecrets.bicep' = {
 // Importing FHIR at APIM (This is using deployment script, it will load the Swagger API definition from GitHub)
 module apimImportAPI 'modules/apim/api-deploymentScript.bicep' = {
   name: 'apimImportAPI'
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   params: {
     managedIdentity: appgwIdentity.outputs.azidentity
     location: location
-    RGName: rg.name
+    RGName: apimRG.name
     APIMName: apimModule.outputs.apimName
     serviceUrl: fhir.outputs.serviceHost
     APIFormat: 'Swagger'

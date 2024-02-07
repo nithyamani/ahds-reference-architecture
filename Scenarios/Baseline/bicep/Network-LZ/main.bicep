@@ -1,7 +1,8 @@
 targetScope = 'subscription'
 
 // Parameters
-param rgName string
+param fhirRGName string
+param apimRGName string
 param vnetSpokeName string
 param rtFHIRSubnetName string
 param nsgFHIRName string
@@ -11,35 +12,37 @@ param location string = deployment().location
 param resourceSuffix string
 param appGatewaySubnetName string
 param FHIRSubnetName string
-param spokeVNETaddPrefixes array
-
-param spokeSubnets array
 
 // Creating Resource Group
-module rg 'modules/resource-group/rg.bicep' = {
-  name: rgName
+module fhirRG 'modules/resource-group/rg.bicep' = {
+  name: fhirRGName
   params: {
-    rgName: rgName
+    rgName: fhirRGName
     location: location
   }
 }
 
+// Defining Resource Group
+resource apimRG 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
+  name: apimRGName
+}
+
 // Creating Log Analytics Workspace
 module monitor 'modules/azmon/azmon.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRG.name)
   name: 'azmon'
   params: {
     location: location
     resourceSuffix: resourceSuffix
   }
   dependsOn: [
-    rg
+    apimRG
   ]
 }
 
 // Creating NSG for FHIR Subnet
 module nsgfhirsubnet 'modules/vnet/nsg.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(fhirRG.name)
   name: nsgFHIRName
   params: {
     location: location
@@ -50,7 +53,7 @@ module nsgfhirsubnet 'modules/vnet/nsg.bicep' = {
 
 // Creating FHIR route table
 module routetable 'modules/vnet/routetable.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(fhirRG.name)
   name: rtFHIRSubnetName
   params: {
     location: location
@@ -59,27 +62,32 @@ module routetable 'modules/vnet/routetable.bicep' = {
 }
 
 // Creating VNET
-module vnetspoke 'modules/vnet/vnet.bicep' = {
-  scope: resourceGroup(rg.name)
-  name: vnetSpokeName
-  params: {
-    location: location
-    vnetAddressSpace: {
-      addressPrefixes: spokeVNETaddPrefixes
-    }
-    vnetName: vnetSpokeName
-    subnets: spokeSubnets
-    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
-  }
-  dependsOn: [
-    rg
-  ]
-}
+// module vnetspoke 'modules/vnet/vnet.bicep' = {
+//   scope: resourceGroup(fhirRG.name)
+//   name: vnetSpokeName
+//   params: {
+//     location: location
+//     vnetAddressSpace: {
+//       addressPrefixes: spokeVNETaddPrefixes
+//     }
+//     vnetName: vnetSpokeName
+//     subnets: spokeSubnets
+//     diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
+//   }
+//   dependsOn: [
+//     rg
+//   ]
+// }
 
+// Defining Virtual Network
+resource vnetspoke 'Microsoft.Network/virtualNetworks@2021-02-01' existing = {
+  scope: resourceGroup(apimRGName)
+  name: vnetSpokeName
+}
 
 // Creating Private DNS Zone for Key Vault
 module privatednsVaultZone 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsVaultZone'
   params: {
     privateDNSZoneName: 'privatelink.vaultcore.azure.net'
@@ -88,11 +96,11 @@ module privatednsVaultZone 'modules/vnet/privatednszone.bicep' = {
 
 // Linking Private DNS Zone for Key Vault to Spoke VNet (required for AppGW to work properly to load Cert from a Private Endpoing Key Vault)
 module privateDNSLinkVaultSpoke 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privateDNSLinkVaultSpoke'
   params: {
     privateDnsZoneName: privatednsVaultZone.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
+    vnetId: vnetspoke.id
     linkName: 'link-spoke'
   }
 }
@@ -100,7 +108,7 @@ module privateDNSLinkVaultSpoke 'modules/vnet/privatednslink.bicep' = {
 // APIM DNS Zones
 // Creating Private DNS Zone for APIM
 module privatednsazureapinet 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsazureapinet'
   params: {
     privateDNSZoneName: 'azure-api.net'
@@ -109,17 +117,17 @@ module privatednsazureapinet 'modules/vnet/privatednszone.bicep' = {
 
 // Linking Private DNS Zone for APIM to VNet
 module privatednsazureapinetLink 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsazureapinetLink'
   params: {
     privateDnsZoneName: privatednsazureapinet.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
+    vnetId: vnetspoke.id
   }
 }
 
 // Creating Private DNS Zone for APIM portal
 module privatednsportalazureapinet 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsportalazureapinet'
   params: {
     privateDNSZoneName: 'portal.azure-api.net'
@@ -128,17 +136,17 @@ module privatednsportalazureapinet 'modules/vnet/privatednszone.bicep' = {
 
 // Linking Private DNS Zone for APIM portal to VNet
 module privatednsportalazureapinetLink 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsportalazureapinetLink'
   params: {
     privateDnsZoneName: privatednsportalazureapinet.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
+    vnetId: vnetspoke.id
   }
 }
 
 // Creating Private DNS Zone for APIM developer
 module privatednsdeveloperazureapinet 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsdeveloperazureapinet'
   params: {
     privateDNSZoneName: 'developer.azure-api.net'
@@ -147,17 +155,17 @@ module privatednsdeveloperazureapinet 'modules/vnet/privatednszone.bicep' = {
 
 // Linking Private DNS Zone for APIM developer to VNet
 module privatednsdeveloperazureapinetLink 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsdeveloperazureapinetLink'
   params: {
     privateDnsZoneName: privatednsdeveloperazureapinet.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
+    vnetId: vnetspoke.id
   }
 }
 
 // Creating Private DNS Zone for APIM management
 module privatednsmanagementazureapinet 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsmanagementazureapinet'
   params: {
     privateDNSZoneName: 'management.azure-api.net'
@@ -166,17 +174,17 @@ module privatednsmanagementazureapinet 'modules/vnet/privatednszone.bicep' = {
 
 // Linking Private DNS Zone for APIM management to VNet
 module privatednsmanagementazureapinetLink 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsmanagementazureapinetLink'
   params: {
     privateDnsZoneName: privatednsmanagementazureapinet.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
+    vnetId: vnetspoke.id
   }
 }
 
 // Creating Private DNS Zone for APIM scm
 module privatednsscmazureapinet 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsscmazureapinet'
   params: {
     privateDNSZoneName: 'scm.azure-api.net'
@@ -185,18 +193,18 @@ module privatednsscmazureapinet 'modules/vnet/privatednszone.bicep' = {
 
 // Linking Private DNS Zone for APIM scm to VNet
 module privatednsscmazureapinetLink 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'privatednsscmazureapinetLink'
   params: {
     privateDnsZoneName: privatednsscmazureapinet.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
+    vnetId: vnetspoke.id
   }
 }
 
 // FHIR DNZ Zones
 // Creating Private DNS Zone for FHIR
 module privatednsfhir 'modules/vnet/privatednszone.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(fhirRG.name)
   name: 'privatednsfhir'
   params: {
     privateDNSZoneName: 'privatelink.azurehealthcareapis.com'
@@ -205,17 +213,17 @@ module privatednsfhir 'modules/vnet/privatednszone.bicep' = {
 
 // Linking Private DNS Zone for FHIR to VNet
 module privatednsfhirLink 'modules/vnet/privatednslink.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(fhirRG.name)
   name: 'privatednsfhirLink'
   params: {
     privateDnsZoneName: privatednsfhir.outputs.privateDNSZoneName
-    vnetId: vnetspoke.outputs.vnetId
+    vnetId: vnetspoke.id
   }
 }
 
 // Creating NSG for AppGW Subnet
 module nsgappgwsubnet 'modules/vnet/nsg.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: nsgAppGWName
   params: {
     diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
@@ -280,7 +288,7 @@ module nsgappgwsubnet 'modules/vnet/nsg.bicep' = {
 
 // Creating AppGW Route Table
 module appgwroutetable 'modules/vnet/routetable.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: rtAppGWSubnetName
   params: {
     location: location
@@ -289,7 +297,7 @@ module appgwroutetable 'modules/vnet/routetable.bicep' = {
 }
 
 module updateappgwNSG 'modules/vnet/updateSubnet.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'AppGWSubnetNamensgupdate'
   params: {
     rtId: appgwroutetable.outputs.routetableID
@@ -303,7 +311,7 @@ module updateappgwNSG 'modules/vnet/updateSubnet.bicep' = {
 }
 
 module updatefhirNSG 'modules/vnet/updateSubnet.bicep' = {
-  scope: resourceGroup(rg.name)
+  scope: resourceGroup(apimRGName)
   name: 'FhirSubnetNamensgupdate'
   params: {
     rtId: routetable.outputs.routetableID
@@ -314,5 +322,6 @@ module updatefhirNSG 'modules/vnet/updateSubnet.bicep' = {
   dependsOn: [
     vnetspoke
     updateappgwNSG
+    nsgfhirsubnet
   ]
 }

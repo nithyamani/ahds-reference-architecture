@@ -2,66 +2,23 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "rgName": {
+    "fhirRGName": {
       "value": "ent-dev-fhir-rg"
     },
+    "apimRGName": {
+      "value": "ent-dev-apim-rg"
+    },
     "vnetSpokeName": {
-      "value": "ent-dev-fhir-vnet"
-    },
-    "spokeVNETaddPrefixes": {
-      "value": [
-        "10.0.0.0/16",
-        "10.1.0.0/16"
-      ]
-    },
-    "spokeSubnets": {
-      "value": [
-        {
-          "name": "default",
-          "properties": {
-            "addressPrefix": "10.0.0.0/24"
-          }
-        },
-        {
-          "name": "ent-dev-fhir-subnet",
-          "properties": {
-            "addressPrefix": "10.1.1.0/24"
-          }
-        },
-        {
-          "name": "ent-dev-fhir-appgw-subnet",
-          "properties": {
-            "addressPrefix": "10.1.2.0/27",
-            "serviceEndpoints": [
-              {
-                "service": "Microsoft.Storage"
-              }
-            ]
-          }
-        },
-        {
-          "name": "ent-dev-fhir-private-endpoint-subnet",
-          "properties": {
-            "addressPrefix": "10.1.4.0/24",
-            "privateEndpointNetworkPolicies": "Disabled"
-          }
-        },
-        {
-          "name": "ent-dev-fhir-apim-subnet",
-          "properties": {
-            "addressPrefix": "10.1.5.0/24"
-          }
-        }
-      ]
+      "value": "ent-dev-apim-vnet"
     },
     "appGatewaySubnetName":{
-      "value": "ent-dev-fhir-appgw-subnet"
+      "value": "ent-dev-appgw-subnet"
     },
     "rtFHIRSubnetName": {
       "value": "ent-dev-fhir-subnet-rt"
     },
     "rtAppGWSubnetName": {
-      "value": "ent-dev-fhir-appgw-subnet-rt"
+      "value": "ent-dev-appgw-subnet-rt"
     },
     "nsgFHIRName": {
       "value": "ent-dev-fhir-nsg"
@@ -70,7 +27,7 @@
       "value": "ent-dev-fhir-subnet"
     },
     "nsgAppGWName": {
-      "value": "ent-dev-fhir-appgw-nsg"
+      "value": "ent-dev-appgw-nsg"
     },
     "resourceSuffix": {
       "value": "ahds"

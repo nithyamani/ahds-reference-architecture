@@ -107,10 +107,11 @@ if (( ${#azProvidersNotRegistered[@]} > 0 )); then
 fi
 
 # Network-LZ
-rgSpoke=ent-dev-fhir-rg
-az deployment sub create -n "ent-dev-fhir-network" -l $answerAzRegion -f Network-LZ/main.bicep -p Network-LZ/parameters-main.json -p rgName=$rgSpoke
+fhirRGName=ent-dev-fhir-rg
+apimRGName=ent-dev-apim-rg
+az deployment sub create -n "ent-dev-fhir-network" -l $answerAzRegion -f Network-LZ/main.bicep -p Network-LZ/parameters-main.json -p fhirRGName=$fhirRGName -p apimRGName=$apimRGName
 
 # AHDS
-publicipappgw=$(az deployment sub create -n "ent-dev-fhir-ahds" -l $answerAzRegion -f AHDS/main.bicep -p AHDS/parameters-main.json -p rgName=$rgSpoke -p appGatewayFQDN=$answerAppGWFQDN --query "properties.outputs.publicipappgw.value" -o tsv)
+publicipappgw=$(az deployment sub create -n "ent-dev-fhir-ahds" -l $answerAzRegion -f AHDS/main.bicep -p AHDS/parameters-main.json -p fhirRGName=$fhirRGName  -p apimRGName=$apimRGName -p appGatewayFQDN=$answerAppGWFQDN --query "properties.outputs.publicipappgw.value" -o tsv)
 echo "Please create a DNS record for the Application Gateway Public IP: $publicipappgw with the FQDN: $answerAppGWFQDN"
 echo Done

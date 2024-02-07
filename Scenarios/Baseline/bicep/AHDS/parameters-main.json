@@ -2,20 +2,23 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "rgName": {
+    "fhirRGName": {
       "value": "ent-dev-fhir-rg"
+    },
+    "apimRGName": {
+      "value": "ent-dev-apim-rg"
     },
     "keyVaultPrivateEndpointName": {
       "value": "ent-dev-fhir-kv-pvt-ep"
     },
     "vnetName": {
-      "value": "ent-dev-fhir-vnet"
+      "value": "ent-dev-apim-vnet"
     },
     "subnetName": {
-      "value": "ent-dev-fhir-private-endpoint-subnet"
+      "value": "ent-dev-srvep-subnet"
     },
     "APIMsubnetName": {
-      "value": "ent-dev-fhir-apim-subnet"
+      "value": "ent-dev-apim-subnet"
     },
     "APIMNamePrefix": {
       "value": "ent-dev-fhir-apim"
@@ -30,7 +33,7 @@
       "value": "privatelink.vaultcore.azure.net"
     },
     "appGatewayName": {
-      "value": "ent-dev-fhir-appgw"
+      "value": "ent-dev-appgw"
     },
     "appGwyAutoScale": {
       "value": {
@@ -42,7 +45,7 @@
       "value": ["1", "2", "3"]
     },
     "appGatewaySubnetName": {
-      "value": "ent-dev-fhir-appgw-subnet"
+      "value": "ent-dev-appgw-subnet"
     },
     "appGatewayFQDN": {
       "value": "tjc.fhir.com"
