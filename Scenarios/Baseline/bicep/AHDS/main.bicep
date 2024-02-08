@@ -31,9 +31,6 @@ param ApiUrlPath string
 
 var primaryBackendEndFQDN = '${APIMName}.azure-api.net'
 
-// Variables
-var audience = 'https://${workspaceName}-${fhirName}.fhir.azurehealthcareapis.com'
-
 // Defining Log Analitics Workspace
 //logAnalyticsWorkspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' existing = {
@@ -276,39 +273,6 @@ module privateEndpointFHIRDNSSetting 'modules/vnet/privatedns.bicep' = {
   params: {
     privateDNSZoneId: privateDNSZoneFHIR.id
     privateEndpointName: privateEndpointFHIR.name
-  }
-}
-
-// Creating KeyVault Secret FS-URL
-module fsurlkvsecret 'modules/keyvault/kvsecrets.bicep' = {
-  scope: resourceGroup(apimRG.name)
-  name: 'fsurl'
-  params: {
-    kvname: keyvault.outputs.keyvaultName
-    secretName: 'FS-URL'
-    secretValue: audience
-  }
-}
-
-// Creating KeyVault Secret FS-TENANT-NAME
-module tenantkvsecret 'modules/keyvault/kvsecrets.bicep' = {
-  scope: resourceGroup(apimRG.name)
-  name: 'fstenant'
-  params: {
-    kvname: keyvault.outputs.keyvaultName
-    secretName: 'FS-TENANT-NAME'
-    secretValue: subscription().tenantId
-  }
-}
-
-// Creating KeyVault Secret FS-RESOURCE
-module fsreskvsecret 'modules/keyvault/kvsecrets.bicep' = {
-  scope: resourceGroup(apimRG.name)
-  name: 'fsresource'
-  params: {
-    kvname: keyvault.outputs.keyvaultName
-    secretName: 'FS-RESOURCE'
-    secretValue: audience
   }
 }
 

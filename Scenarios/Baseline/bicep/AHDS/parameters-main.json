@@ -9,7 +9,7 @@
       "value": "ent-dev-apim-rg"
     },
     "keyVaultPrivateEndpointName": {
-      "value": "ent-dev-fhir-kv-pvt-ep"
+      "value": "ent-dev-kv-pvt-ep"
     },
     "vnetName": {
       "value": "ent-dev-apim-vnet"
