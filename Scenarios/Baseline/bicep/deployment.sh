@@ -24,7 +24,8 @@ echo "Azure Aplication Gateway FQDN: $answerAppGWFQDN"
 ###################
 # List of required azure providers
 ###################
-azProviders=("Microsoft.Network" "Microsoft.Compute" "Microsoft.ContainerInstance" "Microsoft.KeyVault" "Microsoft.ManagedIdentity" "Microsoft.Storage" "Microsoft.HealthcareApis" "Microsoft.Diagnostics" "Microsoft.ContainerRegistry" "Microsoft.Web")
+#azProviders=("Microsoft.Network" "Microsoft.Compute" "Microsoft.ContainerInstance" "Microsoft.KeyVault" "Microsoft.ManagedIdentity" "Microsoft.Storage" "Microsoft.HealthcareApis" "Microsoft.Diagnostics" "Microsoft.ContainerRegistry" "Microsoft.Web")
+azProviders=("Microsoft.Network" "Microsoft.Compute" "Microsoft.KeyVault" "Microsoft.ManagedIdentity" "Microsoft.Storage" "Microsoft.HealthcareApis" "Microsoft.Diagnostics" "Microsoft.Web")
 
 ###################
 # Checking if a required provider is not registered and save in array azProvidersNotRegistered
@@ -107,7 +108,7 @@ if (( ${#azProvidersNotRegistered[@]} > 0 )); then
 fi
 
 # Network-LZ
-fhirRGName=ent-dev-fhir-rg
+fhirRGName=ent-dev-fhir1-rg
 apimRGName=ent-dev-apim-rg
 az deployment sub create -n "ent-dev-fhir-network" -l $answerAzRegion -f Network-LZ/main.bicep -p Network-LZ/parameters-main.json -p fhirRGName=$fhirRGName -p apimRGName=$apimRGName
 

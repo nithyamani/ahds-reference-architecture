@@ -3,15 +3,18 @@ targetScope = 'subscription'
 // Parameters
 param fhirRGName string
 param apimRGName string
+param vnetRGName string
 param vnetSpokeName string
 param rtFHIRSubnetName string
 param nsgFHIRName string
 param nsgAppGWName string
+param nsgAPIMName string
 param rtAppGWSubnetName string
 param location string = deployment().location
 param resourceSuffix string
 param appGatewaySubnetName string
 param FHIRSubnetName string
+param APIMSubnetName string
 
 // Creating Resource Group
 module fhirRG 'modules/resource-group/rg.bicep' = {
@@ -61,27 +64,9 @@ module routetable 'modules/vnet/routetable.bicep' = {
   }
 }
 
-// Creating VNET
-// module vnetspoke 'modules/vnet/vnet.bicep' = {
-//   scope: resourceGroup(fhirRG.name)
-//   name: vnetSpokeName
-//   params: {
-//     location: location
-//     vnetAddressSpace: {
-//       addressPrefixes: spokeVNETaddPrefixes
-//     }
-//     vnetName: vnetSpokeName
-//     subnets: spokeSubnets
-//     diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
-//   }
-//   dependsOn: [
-//     rg
-//   ]
-// }
-
 // Defining Virtual Network
 resource vnetspoke 'Microsoft.Network/virtualNetworks@2021-02-01' existing = {
-  scope: resourceGroup(apimRGName)
+  scope: resourceGroup(vnetRGName)
   name: vnetSpokeName
 }
 
@@ -286,6 +271,84 @@ module nsgappgwsubnet 'modules/vnet/nsg.bicep' = {
   }
 }
 
+// Creating NSG for APIM Subnet
+module nsgapimsubnet 'modules/vnet/nsg.bicep' = {
+  scope: resourceGroup(apimRGName)
+  name: nsgAPIMName
+  params: {
+    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
+    location: location
+    nsgName: nsgAPIMName
+    securityRules: [
+      {
+        name: 'AllowApiManagement'
+        properties: {
+          priority: 120
+          sourceAddressPrefix: '*'
+          protocol: 'Tcp'
+          destinationPortRange: '3443'
+          access: 'Allow'
+          direction: 'Inbound'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+      {
+        name: 'AllowStorage'
+        properties: {
+          priority: 100
+          sourceAddressPrefix: '*'
+          protocol: '*'
+          destinationPortRange: '443'
+          access: 'Allow'
+          direction: 'Outbound'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+      {
+        name: 'AllowSQL'
+        properties: {
+          priority: 140
+          sourceAddressPrefix: '*'
+          protocol: '*'
+          destinationPortRange: '1433'
+          access: 'Allow'
+          direction: 'Outbound'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+      {
+        name: 'AllowAzureLoadBalancer'
+        properties: {
+          priority: 130
+          sourceAddressPrefix: '*'
+          protocol: 'Tcp'
+          destinationPortRange: '6390'
+          access: 'Allow'
+          direction: 'Inbound'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+      {
+        name: 'AllowAzureKeyVault'
+        properties: {
+          priority: 110
+          sourceAddressPrefix: '*'
+          protocol: '*'
+          destinationPortRanges: ['443']
+          access: 'Allow'
+          direction: 'Outbound'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+    ]
+  }
+}
+
 // Creating AppGW Route Table
 module appgwroutetable 'modules/vnet/routetable.bicep' = {
   scope: resourceGroup(apimRGName)
@@ -297,27 +360,47 @@ module appgwroutetable 'modules/vnet/routetable.bicep' = {
 }
 
 module updateappgwNSG 'modules/vnet/updateSubnet.bicep' = {
-  scope: resourceGroup(apimRGName)
+  scope: resourceGroup(vnetRGName)
   name: 'AppGWSubnetNamensgupdate'
   params: {
     rtId: appgwroutetable.outputs.routetableID
     vnetName: vnetSpokeName
     subnetName: appGatewaySubnetName
-    nsgId: nsgappgwsubnet.outputs.nsgID
+    nsgId: nsgappgwsubnet.outputs.nsgID  
   }
   dependsOn: [
     vnetspoke
+    nsgappgwsubnet
+    updateApimNSG
+  ]
+}
+
+module updateApimNSG 'modules/vnet/updateSubnet.bicep' = {
+  scope: resourceGroup(vnetRGName)
+  name: 'APIMSubnetNamensgupdate'
+  params: {
+    rtId: routetable.outputs.routetableID
+    vnetName: vnetSpokeName
+    subnetName: APIMSubnetName
+    nsgId: nsgapimsubnet.outputs.nsgID   
+    sqlServiceep: 'Microsoft.Sql'
+    ehubServiceep: 'Microsoft.EventHub'
+    kvServiceep: 'Microsoft.KeyVault' 
+  }
+  dependsOn: [
+    vnetspoke
+    nsgapimsubnet
   ]
 }
 
 module updatefhirNSG 'modules/vnet/updateSubnet.bicep' = {
-  scope: resourceGroup(apimRGName)
+  scope: resourceGroup(vnetRGName)
   name: 'FhirSubnetNamensgupdate'
   params: {
     rtId: routetable.outputs.routetableID
     vnetName: vnetSpokeName
     subnetName: FHIRSubnetName
-    nsgId: nsgfhirsubnet.outputs.nsgID    
+    nsgId: nsgfhirsubnet.outputs.nsgID      
   }
   dependsOn: [
     vnetspoke

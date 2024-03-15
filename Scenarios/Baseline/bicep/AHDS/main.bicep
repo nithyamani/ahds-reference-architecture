@@ -3,6 +3,7 @@ targetScope = 'subscription'
 param resourceSuffix string
 param apimRGName string
 param fhirRGName string
+param vnetRGName string
 param keyVaultPrivateEndpointName string
 param vnetName string
 param subnetName string
@@ -28,6 +29,7 @@ param fhirName string
 param FhirWorkspaceNamePrefix string
 param workspaceName string = '${FhirWorkspaceNamePrefix}${uniqueString('workspacevws', utcNow('u'))}'
 param ApiUrlPath string
+param apimpipdnsname string = 'ent-dev-apim-pip-${uniqueString('apimpipdns', utcNow('u'))}'
 
 var primaryBackendEndFQDN = '${APIMName}.azure-api.net'
 
@@ -51,7 +53,7 @@ resource apimRG 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
 
 // Defining Private Endpoint Subnet
 resource servicesSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
-  scope: resourceGroup(apimRG.name)
+  scope: resourceGroup(vnetRGName)
   name: '${vnetName}/${subnetName}'
 }
 
@@ -104,8 +106,31 @@ module privateEndpointKVDNSSetting 'modules/vnet/privatedns.bicep' = {
 // APIM
 // Defining APIM Subnet
 resource APIMSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
-  scope: resourceGroup(apimRG.name)
+  scope: resourceGroup(vnetRGName)
   name: '${vnetName}/${APIMsubnetName}'
+}
+
+// Create Public IP for APIM
+module publicipapim 'modules/vnet/publicip.bicep' = {
+  scope: resourceGroup(apimRG.name)
+  name: 'ent-dev-apim-pip'
+  params: {
+    availabilityZones: availabilityZones
+    location: location
+    publicipName: 'ent-dev-apim-pip'
+    publicipproperties: {
+      publicIPAllocationMethod: 'Static'
+      publicIPAddressVersion: 'IPv4'
+      dnsSettings: {
+        domainNameLabel: apimpipdnsname
+      }
+    }
+    publicipsku: {
+      name: 'Standard'
+      tier: 'Regional'
+    }
+    diagnosticWorkspaceId: logAnalyticsWorkspace.id
+  }
 }
 
 // Creating APIM
@@ -116,6 +141,7 @@ module apimModule 'modules/apim/apim.bicep' = {
     apimName: APIMName
     apimSubnetId: APIMSubnet.id
     location: location
+    apimpip: publicipapim.outputs.publicipId
     appInsightsName: appInsights.name
     appInsightsId: appInsights.id
     appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
@@ -155,7 +181,7 @@ module publicipappgw 'modules/vnet/publicip.bicep' = {
 
 // Defining Application Gateway Subnet
 resource appgwSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
-  scope: resourceGroup(apimRG.name)
+  scope: resourceGroup(vnetRGName)
   name: '${vnetName}/${appGatewaySubnetName}'
 }
 
@@ -239,7 +265,6 @@ module fhir 'modules/ahds/fhirservice.bicep' = {
   params: {
     fhirName: fhirName
     workspaceName: workspaceName
-    location: location
     diagnosticWorkspaceId: logAnalyticsWorkspace.id
   }
 }
@@ -298,3 +323,4 @@ module apimImportAPI 'modules/apim/api-deploymentScript.bicep' = {
 // Outputs
 output keyvaultName string = keyvault.name
 output publicipappgw string = publicipappgw.outputs.IpAddress
+output publicipapim string = publicipapim.outputs.IpAddress

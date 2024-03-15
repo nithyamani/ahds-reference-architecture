@@ -3,10 +3,13 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "fhirRGName": {
-      "value": "ent-dev-fhir-rg"
+      "value": "ent-dev-fhir1-rg"
     },
     "apimRGName": {
       "value": "ent-dev-apim-rg"
+    },
+    "vnetRGName": {
+      "value": "ent-dev-network"
     },
     "keyVaultPrivateEndpointName": {
       "value": "ent-dev-kv-pvt-ep"
@@ -15,13 +18,13 @@
       "value": "ent-dev-apim-vnet"
     },
     "subnetName": {
-      "value": "ent-dev-srvep-subnet"
+      "value": "ent-dev-srvep-sub"
     },
     "APIMsubnetName": {
-      "value": "ent-dev-apim-subnet"
+      "value": "ent-dev-apim-sub"
     },
     "APIMNamePrefix": {
-      "value": "ent-dev-fhir-apim"
+      "value": "ent-dev-apim"
     },
     "KeyVaultNamePrefix": {
       "value": "devfhirkv"
@@ -45,16 +48,16 @@
       "value": ["1", "2", "3"]
     },
     "appGatewaySubnetName": {
-      "value": "ent-dev-appgw-subnet"
+      "value": "ent-dev-appgw-sub"
     },
     "appGatewayFQDN": {
-      "value": "tjc.fhir.com"
+      "value": "devapigateway.jointcommission.org"
     },
     "appGatewayCertType": {
       "value": "selfsigned"
     },
     "certPassword": {
-      "value": "ENTER-PASSWORD"
+      "value": "devapigatewaycertpwd"
     },
     "fhirName": {
       "value": "devfhirahds"

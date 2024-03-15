@@ -67,7 +67,7 @@ var diagnosticsMetrics = [for metric in diagnosticMetricsToEnable: {
 }]
 
 // Creating Public IP
-resource publicip 'Microsoft.Network/publicIPAddresses@2020-11-01' = {
+resource publicip 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   name: publicipName
   location: location
   sku: publicipsku

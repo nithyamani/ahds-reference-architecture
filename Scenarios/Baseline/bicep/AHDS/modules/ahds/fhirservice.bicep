@@ -1,7 +1,7 @@
 // Parameters
 param fhirName string
 param workspaceName string
-param location string = resourceGroup().location
+var fhirLocation = 'northcentralus'
 
 @description('Optional. Specifies the number of days that logs will be kept for; a value of 0 will retain data indefinitely.')
 @minValue(0)
@@ -72,7 +72,7 @@ var serviceHost = '${workspaceName}-${fhirName}.fhir.azurehealthcareapis.com'
 // Creating FHIR Workspace
 resource Workspace 'Microsoft.HealthcareApis/workspaces@2022-06-01' = {
   name: workspaceName
-  location: location
+  location: fhirLocation
   properties: {
     publicNetworkAccess: 'Disabled'
   }
@@ -81,7 +81,7 @@ resource Workspace 'Microsoft.HealthcareApis/workspaces@2022-06-01' = {
 // Creating FHIR service at Workspace
 resource FHIR 'Microsoft.HealthcareApis/workspaces/fhirservices@2021-11-01' = {
   name: fhirservicename
-  location: location
+  location:  fhirLocation
   kind: 'fhir-R4'
   identity: {
     type: 'SystemAssigned'

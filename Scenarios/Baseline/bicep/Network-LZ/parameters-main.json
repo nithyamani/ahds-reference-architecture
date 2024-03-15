@@ -3,31 +3,40 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "fhirRGName": {
-      "value": "ent-dev-fhir-rg"
+      "value": "ent-dev-fhir1-rg"
     },
     "apimRGName": {
       "value": "ent-dev-apim-rg"
+    },
+    "vnetRGName": {
+      "value": "ent-dev-network"
     },
     "vnetSpokeName": {
       "value": "ent-dev-apim-vnet"
     },
     "appGatewaySubnetName":{
-      "value": "ent-dev-appgw-subnet"
+      "value": "ent-dev-appgw-sub"
     },
     "rtFHIRSubnetName": {
-      "value": "ent-dev-fhir-subnet-rt"
+      "value": "ent-dev-fhir-sub-rt"
     },
     "rtAppGWSubnetName": {
-      "value": "ent-dev-appgw-subnet-rt"
+      "value": "ent-dev-appgw-sub-rt"
     },
     "nsgFHIRName": {
       "value": "ent-dev-fhir-nsg"
     },
     "FHIRSubnetName": {
-      "value": "ent-dev-fhir-subnet"
+      "value": "ent-dev-fhir-sub"
+    },
+    "APIMSubnetName": {
+      "value": "ent-dev-apim-sub"
     },
     "nsgAppGWName": {
       "value": "ent-dev-appgw-nsg"
+    },
+    "nsgAPIMName": {
+      "value": "ent-dev-apim-nsg"
     },
     "resourceSuffix": {
       "value": "ahds"

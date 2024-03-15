@@ -56,6 +56,8 @@ param diagnosticMetricsToEnable array = [
 @description('Optional. The name of the diagnostic setting, if deployed.')
 param diagnosticSettingsName string = '${apimName}-diagnosticSettings'
 
+param apimpip string
+
 // Variables
 var diagnosticsLogsSpecified = [for category in filter(diagnosticLogCategoriesToEnable, item => item != 'allLogs'): {
   category: category
@@ -97,6 +99,8 @@ resource apimName_resource 'Microsoft.ApiManagement/service@2023-03-01-preview' 
   }
   properties: {
     virtualNetworkType: 'Internal'
+    natGatewayState: 'Disabled'
+    publicIpAddressId: apimpip
     publisherEmail: publisherEmail
     publisherName: publisherName
     virtualNetworkConfiguration: {
