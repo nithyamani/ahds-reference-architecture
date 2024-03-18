@@ -11,7 +11,6 @@ param nsgAppGWName string
 param nsgAPIMName string
 param rtAppGWSubnetName string
 param location string = deployment().location
-param resourceSuffix string
 param appGatewaySubnetName string
 param FHIRSubnetName string
 param APIMSubnetName string
@@ -25,24 +24,6 @@ module fhirRG 'modules/resource-group/rg.bicep' = {
   }
 }
 
-// Defining Resource Group
-resource apimRG 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
-  name: apimRGName
-}
-
-// Creating Log Analytics Workspace
-module monitor 'modules/azmon/azmon.bicep' = {
-  scope: resourceGroup(apimRG.name)
-  name: 'azmon'
-  params: {
-    location: location
-    resourceSuffix: resourceSuffix
-  }
-  dependsOn: [
-    apimRG
-  ]
-}
-
 // Creating NSG for FHIR Subnet
 module nsgfhirsubnet 'modules/vnet/nsg.bicep' = {
   scope: resourceGroup(fhirRG.name)
@@ -50,7 +31,6 @@ module nsgfhirsubnet 'modules/vnet/nsg.bicep' = {
   params: {
     location: location
     nsgName: nsgFHIRName
-    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
   }
 }
 
@@ -211,7 +191,6 @@ module nsgappgwsubnet 'modules/vnet/nsg.bicep' = {
   scope: resourceGroup(apimRGName)
   name: nsgAppGWName
   params: {
-    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
     location: location
     nsgName: nsgAppGWName
     securityRules: [
@@ -276,7 +255,6 @@ module nsgapimsubnet 'modules/vnet/nsg.bicep' = {
   scope: resourceGroup(apimRGName)
   name: nsgAPIMName
   params: {
-    diagnosticWorkspaceId: monitor.outputs.logAnalyticsWorkspaceid
     location: location
     nsgName: nsgAPIMName
     securityRules: [

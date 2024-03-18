@@ -1,6 +1,6 @@
 targetScope = 'subscription'
+
 // Parameters
-param resourceSuffix string
 param apimRGName string
 param fhirRGName string
 param vnetRGName string
@@ -30,21 +30,12 @@ param FhirWorkspaceNamePrefix string
 param workspaceName string = '${FhirWorkspaceNamePrefix}${uniqueString('workspacevws', utcNow('u'))}'
 param ApiUrlPath string
 param apimpipdnsname string = 'ent-dev-apim-pip-${uniqueString('apimpipdns', utcNow('u'))}'
-
+param keyVaultsku string
+param apimSkuName string
+param apimPublisherEmail string
+param apimPublisherName string
+param appgwSku string
 var primaryBackendEndFQDN = '${APIMName}.azure-api.net'
-
-// Defining Log Analitics Workspace
-//logAnalyticsWorkspace
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' existing = {
-  scope: resourceGroup(apimRGName)
-  name: 'log-${resourceSuffix}'
-}
-
-// Defining appInsights
-resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
-  scope: resourceGroup(apimRGName)
-  name: 'appi-${resourceSuffix}'
-}
 
 // Defining Resource Group
 resource apimRG 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
@@ -63,11 +54,10 @@ module keyvault 'modules/keyvault/keyvault.bicep' = {
   name: keyvaultName
   params: {
     location: location
-    keyVaultsku: 'Standard'
+    keyVaultsku: keyVaultsku
     name: keyvaultName
     tenantId: subscription().tenantId
     networkAction: 'Deny'
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
   }
 }
 
@@ -103,7 +93,6 @@ module privateEndpointKVDNSSetting 'modules/vnet/privatedns.bicep' = {
   }
 }
 
-// APIM
 // Defining APIM Subnet
 resource APIMSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-02-01' existing = {
   scope: resourceGroup(vnetRGName)
@@ -129,7 +118,6 @@ module publicipapim 'modules/vnet/publicip.bicep' = {
       name: 'Standard'
       tier: 'Regional'
     }
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
   }
 }
 
@@ -142,10 +130,9 @@ module apimModule 'modules/apim/apim.bicep' = {
     apimSubnetId: APIMSubnet.id
     location: location
     apimpip: publicipapim.outputs.publicipId
-    appInsightsName: appInsights.name
-    appInsightsId: appInsights.id
-    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
+    apimSkuName: apimSkuName
+    publisherEmail: apimPublisherEmail
+    publisherName: apimPublisherName
   }
 }
 
@@ -159,7 +146,6 @@ module apimDNSRecords 'modules/vnet/apimprivatednsrecords.bicep' = {
   }
 }
 
-// AppGW
 // Create Public IP for Application Gateway
 module publicipappgw 'modules/vnet/publicip.bicep' = {
   scope: resourceGroup(apimRG.name)
@@ -175,7 +161,6 @@ module publicipappgw 'modules/vnet/publicip.bicep' = {
       name: 'Standard'
       tier: 'Regional'
     }
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
   }
 }
 
@@ -239,7 +224,7 @@ module appgw 'modules/vnet/appgw.bicep' = {
     appGatewayFQDN: appGatewayFQDN
     keyVaultSecretId: certificate.outputs.secretUri
     primaryBackendEndFQDN: primaryBackendEndFQDN
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
+    appgwSku: appgwSku
   }
   dependsOn: [
    apimImportAPI
@@ -265,7 +250,6 @@ module fhir 'modules/ahds/fhirservice.bicep' = {
   params: {
     fhirName: fhirName
     workspaceName: workspaceName
-    diagnosticWorkspaceId: logAnalyticsWorkspace.id
   }
 }
 

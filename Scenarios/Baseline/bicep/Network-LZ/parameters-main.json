@@ -37,9 +37,6 @@
     },
     "nsgAPIMName": {
       "value": "ent-dev-apim-nsg"
-    },
-    "resourceSuffix": {
-      "value": "ahds"
     }
   }
 }

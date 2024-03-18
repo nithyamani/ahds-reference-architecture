@@ -7,6 +7,7 @@ param appGwyAutoScale object
 param appGatewayFQDN string = 'api.example.com'
 param primaryBackendEndFQDN string
 param appGatewayIdentityId string
+param appgwSku string
 
 @secure()
 param keyVaultSecretId string
@@ -14,75 +15,12 @@ param keyVaultSecretId string
 param availabilityZones array
 param probeUrl string = '/status-0123456789abcdef'
 
-@description('Optional. Specifies the number of days that logs will be kept for; a value of 0 will retain data indefinitely.')
-@minValue(0)
-@maxValue(365)
-param diagnosticLogsRetentionInDays int = 0
-
-@description('Optional. Resource ID of the diagnostic log analytics workspace. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub.')
-param diagnosticWorkspaceId string
-
-@description('Optional. The name of logs that will be streamed. "allLogs" includes all possible logs for the resource.')
-@allowed([
-  'allLogs'
-  'ApplicationGatewayAccessLog'
-  'ApplicationGatewayPerformanceLog'
-  'ApplicationGatewayFirewallLog'
-])
-param diagnosticLogCategoriesToEnable array = [
-  'allLogs'
-]
-
-@description('Optional. The name of metrics that will be streamed.')
-@allowed([
-  'AllMetrics'
-])
-param diagnosticMetricsToEnable array = [
-  'AllMetrics'
-]
-
-@description('Optional. The name of the diagnostic setting, if deployed.')
-param diagnosticSettingsName string = '${appgwname}-diagnosticSettings-001'
-
 // Variables
-var frontendPortNameHTTP = 'HTTP-80'
 var frontendPortNameHTTPs = 'HTTPs-443'
 var frontendIPConfigurationName = 'appGatewayFrontendIP'
-var httplistenerName = 'httplistener'
 var httpslistenerName = 'httpslistener'
 var backendAddressFhirPoolName = 'backend-fhir-pool'
-var backendHttpSettingsCollectionName = 'backend-http-settings'
 var backendHttpsSettingsCollectionName = 'backend-https-settings'
-
-var diagnosticsLogsSpecified = [for category in filter(diagnosticLogCategoriesToEnable, item => item != 'allLogs'): {
-  category: category
-  enabled: true
-  retentionPolicy: {
-    enabled: true
-    days: diagnosticLogsRetentionInDays
-  }
-}]
-
-var diagnosticsLogs = contains(diagnosticLogCategoriesToEnable, 'allLogs') ? [
-  {
-    categoryGroup: 'allLogs'
-    enabled: true
-    retentionPolicy: {
-      enabled: true
-      days: diagnosticLogsRetentionInDays
-    }
-  }
-] : diagnosticsLogsSpecified
-
-var diagnosticsMetrics = [for metric in diagnosticMetricsToEnable: {
-  category: metric
-  timeGrain: null
-  enabled: true
-  retentionPolicy: {
-    enabled: true
-    days: diagnosticLogsRetentionInDays
-  }
-}]
 
 // Creating Application Gateway
 resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
@@ -98,8 +36,8 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
   properties: {
     autoscaleConfiguration: !empty(appGwyAutoScale) ? appGwyAutoScale : null
     sku: {
-      name: 'WAF_v2'
-      tier: 'WAF_v2'
+      name: appgwSku
+      tier: appgwSku
       capacity: empty(appGwyAutoScale) ? 2 : null
     }
     gatewayIPConfigurations: [
@@ -123,12 +61,6 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
       }
     ]
     frontendPorts: [
-      {
-        name: frontendPortNameHTTP
-        properties: {
-          port: 80
-        }
-      }
       {
         name: frontendPortNameHTTPs
         properties: {
@@ -173,16 +105,6 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
     ]
     backendHttpSettingsCollection: [
       {
-        name: backendHttpSettingsCollectionName
-        properties: {
-          cookieBasedAffinity: 'Disabled'
-          path: '/'
-          port: 80
-          protocol: 'Http'
-          requestTimeout: 60
-        }
-      }
-      {
         name: backendHttpsSettingsCollectionName
         properties: {
           port: 443
@@ -199,19 +121,6 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
       }
     ]
     httpListeners: [
-      {
-        name: httplistenerName
-        properties: {
-          frontendIPConfiguration: {
-            id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appgwname, frontendIPConfigurationName)
-          }
-          frontendPort: {
-            id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appgwname, frontendPortNameHTTP)
-          }
-          protocol: 'Http'
-          requireServerNameIndication: false
-        }
-      }
       {
         name: httpslistenerName
         properties: {
@@ -297,7 +206,6 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
           httpListener: {
             id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appgwname, httpslistenerName)
           }
-          
           urlPathMap: {
             id: resourceId('Microsoft.Network/applicationGateways/urlPathMaps', appgwname,'path-redirect' )
           }
@@ -337,15 +245,4 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-02-01' = {
     }
     enableHttp2: true
   }
-}
-
-// Defining Application Gateway Diagnostic Settings
-resource applicationGateway_diagnosticSettingName 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: diagnosticSettingsName
-  properties: {
-    workspaceId: diagnosticWorkspaceId
-    metrics: diagnosticsMetrics
-    logs: diagnosticsLogs
-  }
-  scope: appgw
 }
